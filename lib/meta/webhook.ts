@@ -32,6 +32,49 @@ export function verifyWebhookSignature(
   });
 }
 
+/**
+ * Explains a signature mismatch without revealing any secret: which keys were
+ * configured, how long each is, and the first bytes each one produces for this
+ * body, next to what Meta actually sent. Enough to tell "the key is wrong"
+ * from "no key is configured" from "the body was altered in transit".
+ */
+export type SignatureDiagnosis = {
+  received: string | null;
+  bodySha256: string;
+  bodyLength: number;
+  candidates: {
+    name: string;
+    configured: boolean;
+    secretLength: number;
+    computed: string | null;
+  }[];
+};
+
+export function describeSignatureMismatch(
+  payload: string,
+  signature: string | null
+): SignatureDiagnosis {
+  const named: [string, string | undefined][] = [
+    ["FACEBOOK_APP_SECRET", process.env.FACEBOOK_APP_SECRET],
+    ["INSTAGRAM_APP_SECRET", process.env.INSTAGRAM_APP_SECRET],
+  ];
+
+  return {
+    received: signature ? signature.slice(0, 23) : null,
+    bodySha256: createHmac("sha256", "").update(payload).digest("hex").slice(0, 16),
+    bodyLength: payload.length,
+    candidates: named.map(([name, secret]) => ({
+      name,
+      configured: Boolean(secret),
+      secretLength: secret?.length ?? 0,
+      computed: secret
+        ? "sha256=" +
+          createHmac("sha256", secret).update(payload).digest("hex").slice(0, 16)
+        : null,
+    })),
+  };
+}
+
 export interface WebhookCommentEvent {
   instagramAccountId: string;
   commentId: string;

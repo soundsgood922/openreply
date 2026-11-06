@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
 import {
+  describeSignatureMismatch,
   parseCommentEvents,
   verifyWebhookSignature,
 } from "@/lib/meta/webhook";
@@ -41,6 +42,10 @@ export async function POST(request: NextRequest) {
             hadSignatureHeader: Boolean(signature),
             bodyLength: rawBody.length,
             bodyPreview: rawBody.slice(0, 200),
+            // Which key Meta signed with is not knowable from the docs for a
+            // given app setup, so record enough to compare without ever
+            // storing a secret.
+            diagnosis: describeSignatureMismatch(rawBody, signature),
           },
         },
       })
