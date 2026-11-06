@@ -145,6 +145,12 @@ model InstagramAccount {
   id                String   @id @default(cuid())
   workspaceId       String
   instagramId       String   @unique
+  /// The id Instagram uses for this account inside messaging webhooks, when it
+  /// differs from instagramId. Graph addresses a professional account by its
+  /// account id, but a messaging webhook identifies the same account by an
+  /// app-scoped id that Graph cannot resolve, so the two have to be recorded
+  /// separately or every event is discarded as belonging to no known account.
+  messagingId       String?  @unique
   username          String
   name              String?
   provider          InstagramProvider @default(META)

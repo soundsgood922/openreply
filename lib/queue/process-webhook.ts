@@ -10,11 +10,25 @@ export async function processInstagramWebhook({ payload: incoming, provider, wor
   payload: InstagramPayload; provider: InstagramProvider; workspaceId?: string;
 }) {
   if (incoming.object !== 'instagram' || !Array.isArray(incoming.entry)) return;
+  const entryIds = incoming.entry.map(e => e.id);
   const accounts = await prisma.instagramAccount.findMany({
-    where: { instagramId: { in: incoming.entry.map(e => e.id) }, provider, ...(workspaceId ? { workspaceId } : {}) },
-    select: { id: true, instagramId: true, workspaceId: true },
+    where: {
+      // A messaging webhook identifies the account by an app-scoped id that
+      // differs from the one Graph uses, so matching only on instagramId
+      // silently discards every message and postback event.
+      OR: [{ instagramId: { in: entryIds } }, { messagingId: { in: entryIds } }],
+      provider,
+      ...(workspaceId ? { workspaceId } : {}),
+    },
+    select: { id: true, instagramId: true, messagingId: true, workspaceId: true },
   });
-  const accountMap = new Map(accounts.map(a => [a.instagramId, a]));
+  // Keyed by both ids so a lookup by whichever id the event carried resolves
+  // to the same account.
+  const accountMap = new Map<string, (typeof accounts)[number]>();
+  for (const a of accounts) {
+    accountMap.set(a.instagramId, a);
+    if (a.messagingId) accountMap.set(a.messagingId, a);
+  }
   const allowed = new Set(accountMap.keys());
   const payload = { ...incoming, entry: incoming.entry.filter(e => allowed.has(e.id)) };
   if (!payload.entry.length) return;
