@@ -122,11 +122,42 @@ describe("Instagram provider boundary", () => {
     respond({ data: [{ id: "media" }] });
     expect(
       await getUserMedia({
-        context: { provider: "META", accessToken: "meta" },
+        context: { provider: "META", accessToken: "meta", instagramId: "ig-1" },
         limit: 3,
       })
     ).toEqual([{ id: "media" }]);
     expect(fetchMock.mock.calls[0][0]).toContain("graph.instagram.com");
+    // Without META_AUTH_MODE the Instagram User token path is unchanged, so
+    // the account-scoped read still goes through /me.
+    expect(fetchMock.mock.calls[0][0]).toContain("/me/media");
+  });
+  it("addresses the account by id on the Facebook host in page-token mode", async () => {
+    // A Page token's /me is the Page, so an account-scoped read that still
+    // used /me would silently return the wrong object's media.
+    vi.stubEnv("META_AUTH_MODE", "page");
+    respond({ data: [{ id: "media" }] });
+    expect(
+      await getUserMedia({
+        context: { provider: "META", accessToken: "meta", instagramId: "ig-1" },
+        limit: 3,
+      })
+    ).toEqual([{ id: "media" }]);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain("graph.facebook.com");
+    expect(url).toContain("/ig-1/media");
+    expect(url).not.toContain("/me/media");
+    vi.unstubAllEnvs();
+  });
+  it("refuses an account-scoped read with no account id in page-token mode", async () => {
+    vi.stubEnv("META_AUTH_MODE", "page");
+    await expect(
+      getUserMedia({
+        context: { provider: "META", accessToken: "meta", instagramId: "" },
+        limit: 3,
+      })
+    ).rejects.toThrow(/Instagram account id/);
+    expect(fetchMock).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
   it.each([
     [429, RateLimitError],

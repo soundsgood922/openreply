@@ -1,7 +1,41 @@
 import { getMetaGraphApiVersion, requireEnv } from "@/lib/env";
 
+/**
+ * Meta stopped offering "API setup with Instagram login" to apps created from
+ * late October 2026, so a new self-hosted deployment cannot get an Instagram
+ * User token at all. Those deployments connect through a Facebook Page instead:
+ * a Page access token (which never expires) reaching the same Instagram
+ * endpoints on graph.facebook.com.
+ *
+ * Set META_AUTH_MODE=page to use that path. Left unset, everything behaves
+ * exactly as before, so deployments that already hold an Instagram User token
+ * are untouched.
+ */
+export function usesPageToken(): boolean {
+  return process.env.META_AUTH_MODE === "page";
+}
+
 function instagramGraphBase() {
-  return `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
+  return usesPageToken()
+    ? `https://graph.facebook.com/${getMetaGraphApiVersion()}`
+    : `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
+}
+
+/**
+ * The node that stands for "the connected Instagram account".
+ *
+ * With an Instagram User token /me IS that account. With a Page token /me is
+ * the Page, so the account has to be addressed by id — and the id is therefore
+ * required in page mode rather than optional.
+ */
+function selfNode(instagramAccountId?: string): string {
+  if (!usesPageToken()) return "me";
+  if (!instagramAccountId) {
+    throw new Error(
+      "META_AUTH_MODE=page requires an Instagram account id: a Page token's /me is the Page, not the Instagram account"
+    );
+  }
+  return instagramAccountId;
 }
 
 function facebookGraphBase() {
@@ -664,11 +698,18 @@ export async function getConversationMessages(
   return data.messages?.data ?? [];
 }
 
-export async function getUserInfo(accessToken: string): Promise<InstagramUser> {
-  const url = new URL(`${instagramGraphBase()}/me`);
+export async function getUserInfo(
+  accessToken: string,
+  instagramAccountId?: string
+): Promise<InstagramUser> {
+  const url = new URL(`${instagramGraphBase()}/${selfNode(instagramAccountId)}`);
+  // user_id only exists on the Instagram Login node; asking for it on
+  // graph.facebook.com fails the whole request with "nonexisting field".
   url.searchParams.set(
     "fields",
-    "id,user_id,username,name,profile_picture_url,followers_count"
+    usesPageToken()
+      ? "id,username,name,profile_picture_url,followers_count"
+      : "id,user_id,username,name,profile_picture_url,followers_count"
   );
   url.searchParams.set("access_token", accessToken);
 
@@ -684,9 +725,12 @@ const MEDIA_PAGE_SIZE = 100;
 
 export async function getUserMedia(
   accessToken: string,
-  limit = 25
+  limit = 25,
+  instagramAccountId?: string
 ): Promise<InstagramMedia[]> {
-  const url = new URL(`${instagramGraphBase()}/me/media`);
+  const url = new URL(
+    `${instagramGraphBase()}/${selfNode(instagramAccountId)}/media`
+  );
   url.searchParams.set("fields", MEDIA_FIELDS);
   url.searchParams.set("limit", limit.toString());
   url.searchParams.set("access_token", accessToken);
@@ -704,11 +748,14 @@ export async function getUserMedia(
  */
 export async function getAllUserMedia(
   accessToken: string,
-  max = 500
+  max = 500,
+  instagramAccountId?: string
 ): Promise<InstagramMedia[]> {
   const results: InstagramMedia[] = [];
 
-  const first = new URL(`${instagramGraphBase()}/me/media`);
+  const first = new URL(
+    `${instagramGraphBase()}/${selfNode(instagramAccountId)}/media`
+  );
   first.searchParams.set("fields", MEDIA_FIELDS);
   first.searchParams.set("limit", String(Math.min(MEDIA_PAGE_SIZE, max)));
   first.searchParams.set("access_token", accessToken);

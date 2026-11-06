@@ -2,7 +2,11 @@ import { decryptToken } from "@/lib/meta/oauth";
 import { prisma } from "@/lib/db/client";
 
 export type InstagramContext =
-  | { provider: "META"; accessToken: string }
+  // instagramId travels with the META context because a Page token's /me is
+  // the Page, not the Instagram account, so the account-scoped reads have to
+  // address the account by id. It is carried for both auth modes so callers
+  // never have to care which one is configured.
+  | { provider: "META"; accessToken: string; instagramId: string }
   | {
       provider: "ZERNIO";
       apiKey: string;
@@ -32,7 +36,11 @@ export async function createInstagramContext(
   operationId?: string
 ): Promise<InstagramContext> {
   if (account.provider !== "ZERNIO")
-    return { provider: "META", accessToken: decryptToken(account.accessToken) };
+    return {
+      provider: "META",
+      accessToken: decryptToken(account.accessToken),
+      instagramId: account.instagramId,
+    };
   if (!account.zernioAccountId)
     throw new Error("Zernio account is not connected");
   const connection = await prisma.zernioConnection.findUnique({
