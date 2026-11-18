@@ -4,7 +4,10 @@
  * rejections that mention one of our ids, and deliveries — each with its time,
  * so webhook speed can be told apart from the polling fallback. Read-only.
  *
- *   DATABASE_URL="<url>" npx tsx scripts/watch-live-test.ts [timeoutSeconds]
+ *   DATABASE_URL="<url>" npx tsx scripts/watch-live-test.ts [timeoutSeconds] [lingerSeconds]
+ *
+ * lingerSeconds is how long to keep listening after the first delivery; raise
+ * it when the test needs a person to act afterwards, such as tapping a button.
  */
 import { prisma } from "../lib/db/client";
 
@@ -12,11 +15,15 @@ const OUR_IDS = ["17841450929116626", "102026719003284"];
 
 async function main() {
   const timeoutMs = Number(process.argv[2] ?? 900) * 1000;
+  const lingerMs = Number(process.argv[3] ?? 45) * 1000;
   const start = new Date();
   const deadline = Date.now() + timeoutMs;
   console.log(`watching from ${start.toISOString()} for ${timeoutMs / 1000}s`);
 
   const seen = new Set<string>();
+  // A delivery row is updated in place as a multi-step flow advances, so its
+  // state is tracked rather than printed once.
+  const lastState = new Map<string, string>();
   let deliveredAt: number | null = null;
 
   while (Date.now() < deadline) {
@@ -57,15 +64,18 @@ async function main() {
     }
 
     for (const l of logs) {
-      if (seen.has(l.id)) continue;
-      seen.add(l.id);
-      console.log(`\n[DELIVERY] ${l.createdAt.toISOString()} ${JSON.stringify(l)}`);
+      const state = JSON.stringify(l);
+      if (lastState.get(l.id) === state) continue;
+      const label = lastState.has(l.id) ? "DELIVERY UPDATED" : "DELIVERY";
+      lastState.set(l.id, state);
+      console.log(`\n[${label}] seen ${new Date().toISOString()} ${state}`);
       deliveredAt ??= Date.now();
     }
 
-    // After a delivery, keep listening briefly so a webhook that raced the
-    // polling fallback is still reported, then stop.
-    if (deliveredAt && Date.now() - deliveredAt > 45_000) break;
+    // After a delivery, keep listening for the linger window so a webhook
+    // that raced the polling fallback, or a later button tap, is still
+    // reported, then stop.
+    if (deliveredAt && Date.now() - deliveredAt > lingerMs) break;
 
     await new Promise((r) => setTimeout(r, 5_000));
   }
