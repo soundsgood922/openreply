@@ -47,16 +47,19 @@ export function parsePageCommentEvents(
       const v = change.value;
       if (change.field !== "feed" || !v) continue;
       if (v.item !== "comment" || v.verb !== "add") continue;
-      if (!v.comment_id || !v.post_id || !v.from?.id) continue;
+      if (!v.comment_id || !v.post_id) continue;
       // The Page's own comments (including the tool's public replies).
-      if (v.from.id === entry.id) continue;
+      if (v.from?.id === entry.id) continue;
       events.push({
         pageId: entry.id,
         commentId: v.comment_id,
         postId: v.post_id,
         commentText: v.message ?? "",
-        commenterId: v.from.id,
-        commenterName: v.from.name,
+        // Meta leaves out who commented for people without a role on the app
+        // until it has Advanced Access; the private reply needs only the
+        // comment id, so stand in an id unique to this comment.
+        commenterId: v.from?.id ?? `fb_comment_${v.comment_id}`,
+        commenterName: v.from?.name,
       });
     }
   }

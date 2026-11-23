@@ -22,7 +22,7 @@ function readEnvFile(name: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const line of readFileSync(resolve(process.cwd(), name), "utf8").split(/\r?\n/)) {
     const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)$/);
-    if (m) out[m[1]] = m[2].trim();
+    if (m) out[m[1]] = m[2].trim().replace(/^(["'])(.*)$/, "$2");
   }
   return out;
 }

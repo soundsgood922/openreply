@@ -38,7 +38,7 @@ import {
   parsePageCommentEvents,
   processFacebookWebhook,
 } from "@/lib/facebook/process-webhook";
-import { reconcileComments } from "@/lib/polling/comment-reconciler";
+import { commenterIdOf, reconcileComments } from "@/lib/polling/comment-reconciler";
 
 const PAGE = "102026719003284";
 const page = { provider: "FACEBOOK" as const, accessToken: "page-token", instagramId: PAGE };
@@ -205,5 +205,16 @@ describe("FACEBOOK_PAGES_ENABLED", () => {
     mockPrisma.automation.findMany.mockResolvedValue([]);
     await reconcileComments();
     expect(mockPrisma.automation.findMany.mock.calls[0][0].where).toEqual({ isActive: true });
+  });
+});
+
+describe("comments without an author", () => {
+  const comment = { id: "post_c1", text: "test", timestamp: "2026-11-23T00:00:00Z" };
+  it("keeps a Page comment under a stand-in id", () => {
+    expect(commenterIdOf(comment, "FACEBOOK")).toBe("fb_comment_post_c1");
+  });
+  it("still skips an Instagram comment", () => {
+    expect(commenterIdOf(comment, "META")).toBeUndefined();
+    expect(commenterIdOf({ ...comment, from: { id: "u1" } }, "META")).toBe("u1");
   });
 });

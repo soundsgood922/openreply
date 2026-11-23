@@ -215,7 +215,7 @@ async function sweepCampaign({
     // Keep only comments that (a) aren't the account's own, (b) match the
     // keyword, and (c) have no reply from the account owner yet.
     const needsAction = comments.filter((c) => {
-      const authorId = c.from?.id;
+      const authorId = commenterIdOf(c, account.provider);
       if (!authorId || authorId === account.instagramId) return false;
 
       const matched = automation.matchAnyWord
@@ -282,7 +282,7 @@ async function sweepCampaign({
         accountConnectionId: account.id,
         commentId: c.id,
         commentText: c.text ?? "",
-        commenterId: c.from!.id,
+        commenterId: commenterIdOf(c, account.provider)!,
         commenterName: c.from?.username,
         mediaId,
         // When the sweep is looking at an ad, the campaign is bound to the post
@@ -300,6 +300,23 @@ async function sweepCampaign({
   }
 
   return stat;
+}
+
+/**
+ * Who left a comment, as the delivery log records it.
+ *
+ * A Facebook Page reads a commenter's identity only for people with a role on
+ * the app until the app has Advanced Access, so a fan's comment arrives with
+ * no `from`. The private reply is addressed by comment id and does not need
+ * it, so a Page comment without an author is kept under a stand-in id unique
+ * to that comment. Instagram comments without an author are still skipped.
+ */
+export function commenterIdOf(
+  comment: InstagramComment,
+  provider: "META" | "ZERNIO" | "FACEBOOK"
+): string | undefined {
+  if (comment.from?.id) return comment.from.id;
+  return provider === "FACEBOOK" ? `fb_comment_${comment.id}` : undefined;
 }
 
 /**
