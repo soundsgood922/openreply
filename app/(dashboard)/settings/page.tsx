@@ -2,10 +2,8 @@
 
 import LanguageSwitcher from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n/provider";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { AccountOption } from "@/components/account-select";
-import { ZernioConnection } from "@/components/zernio-connection";
-import { InstagramConnectNotice } from "@/components/instagram-connect-notice";
 
 interface SettingsData {
   workspace: {
@@ -134,20 +132,11 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      {/* Surfaces the ?instagram= code the OAuth routes redirect back with.
-          Needs a Suspense boundary: useSearchParams in a prerendered client
-          page fails the production build without one. */}
-      <Suspense fallback={null}>
-        <InstagramConnectNotice />
-      </Suspense>
-
       <section className="panel rounded p-4 sm:p-6 space-y-3">
         <h2 className="text-base font-semibold">{t("Interface language")}</h2>
         <LanguageSwitcher />
         <p className="text-sm text-muted">{t("Saved in this browser. Campaign messages stay unchanged.")}</p>
       </section>
-
-      <ZernioConnection canManage={canManageMembers} />
 
       <section className="panel rounded p-4 sm:p-6">
         <h2 className="text-base font-semibold mb-6">{t("Instagram Connection")}</h2>
@@ -186,7 +175,7 @@ export default function SettingsPage() {
           <div className="space-y-3 py-3">
             {accounts.length === 0 && (
               <p className="text-sm text-muted">
-                {t("Connect an Instagram professional account to launch campaigns.")}
+                目前沒有已連接的帳號，新增帳號請聯絡系統管理員。
               </p>
             )}
             {accounts.map((account) => (
@@ -203,7 +192,7 @@ export default function SettingsPage() {
                     {account.tokenExpiresAt
                       ? new Date(account.tokenExpiresAt).toLocaleDateString(locale)
                       : t("not available")}</>}{" "}
-                    · {account.webhookSubscribed ? t("Webhook ready") : t("Webhook pending")}
+                    {account.provider !== "FACEBOOK" && <> · {account.webhookSubscribed ? t("Webhook ready") : t("Webhook pending")}</>}
                   </p>
                 </div>
                 <button
@@ -218,15 +207,6 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-border flex gap-3">
-          <a
-            href="/api/instagram/connect"
-            className="px-4 py-2 rounded text-sm font-medium transition-colors bg-accent text-white hover:bg-accent-hover"
-          >
-            {t("Connect using your own Meta app")}
-          </a>
         </div>
       </section>
 

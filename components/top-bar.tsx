@@ -12,8 +12,6 @@ import { usePathname } from "next/navigation";
 
 const pageTitles: Record<string, StaticMessageKey> = {
   "/dashboard": "Dashboard",
-  "/overview": "Overview",
-  "/inbox": "Inbox",
   "/campaigns/import": "Import campaigns",
   "/campaigns": "Campaigns",
   "/campaigns/new": "New Campaign",
@@ -70,16 +68,7 @@ export default function TopBar({
             ? t("{count} accounts", { count: instagramAccountCount })
             : `@${instagramUsername}`}
         </p>
-      ) : (
-        <a
-          href="/api/instagram/connect"
-          className="shrink-0 whitespace-nowrap text-sm font-medium px-3 py-1.5 rounded bg-accent text-white hover:bg-accent-hover"
-        >
-          {/* Full label needs more room than a 360px header has to spare. */}
-          <span className="sm:hidden">{t("Connect")}</span>
-          <span className="hidden sm:inline">{t("Connect Instagram")}</span>
-        </a>
-      )}
+      ) : null}
     </header>
   );
 }

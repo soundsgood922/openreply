@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "OpenReply",
     short_name: "OpenReply",
     description: "Instagram comment-to-DM automation",
-    start_url: "/overview",
+    start_url: "/dashboard",
     display: "standalone",
     orientation: "portrait",
     background_color: "#18181b",
