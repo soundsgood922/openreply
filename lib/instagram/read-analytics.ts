@@ -1,4 +1,5 @@
 import * as meta from "@/lib/meta/client";
+import * as fb from "@/lib/facebook/client";
 import { zernioRequest } from "@/lib/zernio/client";
 import type { InstagramContext, ZernioContext } from "./context";
 
@@ -35,7 +36,8 @@ export async function getRecipientUsername({
   context: InstagramContext;
   recipientId: string;
 }): Promise<string | null> {
-  if (context.provider === "FACEBOOK") return null;
+  if (context.provider === "FACEBOOK")
+    return fb.getMessengerName(context.accessToken, recipientId);
   if (context.provider === "META")
     return meta.getUserUsername(context.accessToken, recipientId);
   return null;

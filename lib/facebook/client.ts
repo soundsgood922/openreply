@@ -322,3 +322,25 @@ export async function getPageInfo(
       : {}),
   };
 }
+
+/**
+ * The display name behind a Page-scoped id (Messenger User Profile API), for
+ * personalizing a DM to someone who tapped a button. Answered only for people
+ * who have messaged or interacted with the Page; null otherwise.
+ */
+export async function getMessengerName(
+  accessToken: string,
+  psid: string
+): Promise<string | null> {
+  try {
+    const url = new URL(`${graphBase()}/${psid}`);
+    url.searchParams.set("fields", "name,first_name");
+    url.searchParams.set("access_token", accessToken);
+    const res = await fetch(url.toString());
+    if (!res.ok) return null;
+    const data = (await res.json()) as { name?: string; first_name?: string };
+    return data.name ?? data.first_name ?? null;
+  } catch {
+    return null;
+  }
+}

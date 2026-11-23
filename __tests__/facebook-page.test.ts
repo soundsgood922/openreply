@@ -36,6 +36,7 @@ import {
 } from "@/lib/instagram/provider";
 import {
   parsePageCommentEvents,
+  parsePagePostbackEvents,
   processFacebookWebhook,
 } from "@/lib/facebook/process-webhook";
 import { commenterIdOf, reconcileComments } from "@/lib/polling/comment-reconciler";
@@ -216,5 +217,41 @@ describe("comments without an author", () => {
   it("still skips an Instagram comment", () => {
     expect(commenterIdOf(comment, "META")).toBeUndefined();
     expect(commenterIdOf({ ...comment, from: { id: "u1" } }, "META")).toBe("u1");
+  });
+});
+
+const tap = (sender: string) => ({
+  object: "page",
+  entry: [
+    {
+      id: PAGE,
+      messaging: [
+        {
+          sender: { id: sender },
+          recipient: { id: PAGE },
+          postback: { payload: "reveal:auto1:open", title: "Get it", mid: "m_1:x" },
+        },
+      ],
+    },
+  ],
+});
+
+describe("Messenger button taps", () => {
+  it("parses a tap and ignores the Page's own", () => {
+    expect(parsePagePostbackEvents(tap("psid1"))).toEqual([
+      { pageId: PAGE, userId: "psid1", payload: "reveal:auto1:open", mid: "m_1:x" },
+    ]);
+    expect(parsePagePostbackEvents(tap(PAGE))).toEqual([]);
+  });
+
+  it("queues the postback job that delivers the link", async () => {
+    mockPrisma.instagramAccount.findMany.mockResolvedValue([{ id: "acc", instagramId: PAGE, workspaceId: "w" }]);
+    mockPrisma.webhookEvent.create.mockResolvedValue({ id: "evt" });
+    await processFacebookWebhook(tap("psid1"));
+    expect(queueAdd).toHaveBeenCalledWith(
+      "process-postback",
+      { instagramAccountId: PAGE, accountConnectionId: "acc", userId: "psid1", payload: "reveal:auto1:open", mid: "m_1:x" },
+      { jobId: `postback_${PAGE}_psid1_m_1_x` }
+    );
   });
 });

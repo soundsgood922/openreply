@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/client";
-import { getDMQueue } from "@/lib/queue/client";
+import { getDMQueue, POSTBACK_JOB_NAME } from "@/lib/queue/client";
 import { Prisma } from "@/app/generated/prisma/client";
 
 /**
@@ -24,6 +24,13 @@ export interface PageWebhookPayload {
         from?: { id: string; name?: string };
         created_time?: number | string;
       };
+    }[];
+    // Messenger events (button taps on our DMs) arrive on the same Page
+    // webhook once the Page subscribes to messaging_postbacks.
+    messaging?: {
+      sender?: { id?: string };
+      recipient?: { id?: string };
+      postback?: { payload?: string; title?: string; mid?: string };
     }[];
   }[];
 }
@@ -66,8 +73,34 @@ export function parsePageCommentEvents(
   return events;
 }
 
+export interface PagePostbackEvent {
+  pageId: string;
+  userId: string;
+  payload: string;
+  mid?: string;
+}
+
+/** Button taps on the Page's Messenger messages (opening DM buttons). */
+export function parsePagePostbackEvents(
+  payload: PageWebhookPayload
+): PagePostbackEvent[] {
+  if (payload.object !== "page" || !Array.isArray(payload.entry)) return [];
+  const events: PagePostbackEvent[] = [];
+  for (const entry of payload.entry) {
+    for (const m of entry.messaging ?? []) {
+      const userId = m.sender?.id;
+      const postback = m.postback?.payload;
+      if (!userId || !postback || userId === entry.id) continue;
+      events.push({ pageId: entry.id, userId, payload: postback, mid: m.postback?.mid });
+    }
+  }
+  return events;
+}
+
 /**
- * Queues new Page comments for the same worker job Instagram comments use.
+ * Queues new Page comments for the same worker job Instagram comments use,
+ * and Messenger button taps for the same postback job, which delivers the
+ * link after an opening DM.
  * Only Pages connected as FACEBOOK accounts are handled; events for any other
  * Page are dropped before anything is stored.
  */
@@ -75,24 +108,28 @@ export async function processFacebookWebhook(
   payload: PageWebhookPayload
 ): Promise<void> {
   const events = parsePageCommentEvents(payload);
-  if (events.length === 0) return;
+  const postbacks = parsePagePostbackEvents(payload);
+  if (events.length === 0 && postbacks.length === 0) return;
 
+  const pageIds = [...events, ...postbacks].map((e) => e.pageId);
   const accounts = await prisma.instagramAccount.findMany({
     where: {
       provider: "FACEBOOK",
-      instagramId: { in: [...new Set(events.map((e) => e.pageId))] },
+      instagramId: { in: [...new Set(pageIds)] },
     },
     select: { id: true, instagramId: true, workspaceId: true },
   });
   const accountMap = new Map(accounts.map((a) => [a.instagramId, a]));
   const ours = events.filter((e) => accountMap.has(e.pageId));
-  if (ours.length === 0) return;
+  const ourPostbacks = postbacks.filter((e) => accountMap.has(e.pageId));
+  if (ours.length === 0 && ourPostbacks.length === 0) return;
 
+  const firstPage = (ours[0] ?? ourPostbacks[0]).pageId;
   const webhookEvent = await prisma.webhookEvent.create({
     data: {
       object: "page",
       payload: payload as unknown as Prisma.InputJsonValue,
-      workspaceId: accountMap.get(ours[0].pageId)!.workspaceId,
+      workspaceId: accountMap.get(firstPage)!.workspaceId,
       status: "PENDING",
     },
   });
@@ -113,6 +150,24 @@ export async function processFacebookWebhook(
           source: "WEBHOOK",
         },
         { jobId: `comment_${event.pageId}_${event.commentId}` }
+      );
+    }
+    for (const event of ourPostbacks) {
+      await queue.add(
+        POSTBACK_JOB_NAME,
+        {
+          instagramAccountId: event.pageId,
+          accountConnectionId: accountMap.get(event.pageId)!.id,
+          userId: event.userId,
+          payload: event.payload,
+          mid: event.mid,
+        },
+        {
+          // Same shape as the Instagram postback job id; BullMQ forbids ":".
+          jobId: `postback_${event.pageId}_${event.userId}_${(
+            event.mid ?? event.payload
+          ).replace(/:/g, "_")}`,
+        }
       );
     }
     await prisma.webhookEvent.update({
