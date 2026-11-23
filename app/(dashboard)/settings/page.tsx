@@ -139,7 +139,7 @@ export default function SettingsPage() {
       </section>
 
       <section className="panel rounded p-4 sm:p-6">
-        <h2 className="text-base font-semibold mb-6">{t("Instagram Connection")}</h2>
+        <h2 className="text-base font-semibold mb-6">帳號連線</h2>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3 py-3 border-b border-border">
@@ -164,7 +164,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-sm font-medium text-foreground">{t("Accounts")}</p>
               <p className="text-xs text-muted mt-0.5">
-                {t(accounts.length === 1 ? "{count} connected Instagram profile" : "{count} connected Instagram profiles", { count: accounts.length })}
+                已連接 {accounts.length} 個帳號（IG 與 FB 粉專）
               </p>
             </div>
             <span className="text-sm text-muted">
@@ -188,11 +188,11 @@ export default function SettingsPage() {
                     {account.provider === "FACEBOOK" ? `FB 粉專 · ${account.username}` : `@${account.username}`}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    {account.provider === "ZERNIO" ? t("Connected via Zernio") : account.provider === "FACEBOOK" ? "粉專權杖（不會過期）" : <>{t("Token expires")}{" "}
+                    {account.provider === "ZERNIO" ? t("Connected via Zernio") : account.provider === "FACEBOOK" || !account.tokenExpiresAt ? "粉專權杖（不會過期）" : <>{t("Token expires")}{" "}
                     {account.tokenExpiresAt
                       ? new Date(account.tokenExpiresAt).toLocaleDateString(locale)
                       : t("not available")}</>}{" "}
-                    {account.provider !== "FACEBOOK" && <> · {account.webhookSubscribed ? t("Webhook ready") : t("Webhook pending")}</>}
+                     · {account.webhookSubscribed ? t("Webhook ready") : t("Webhook pending")}
                   </p>
                 </div>
                 <button
@@ -320,7 +320,7 @@ export default function SettingsPage() {
               {t("DMs sent this month")}
             </p>
             <p className="text-xs text-muted mt-0.5">
-              {t("Self-hosted — no plan limits.")}
+              IG 與 FB 合計，含測試訊息。Meta 限制：每個帳號每小時最多 750 則；每則留言只能私訊一次，且須在留言後 7 天內。
             </p>
           </div>
           <span className="text-sm font-semibold text-foreground">
