@@ -40,6 +40,7 @@ import {
   type InstagramContext,
 } from "@/lib/instagram/provider";
 import { matchKeywords } from "@/lib/utils/keyword-matcher";
+import { facebookPagesEnabled } from "@/lib/facebook/flag";
 
 // Only consider comments from the last few days — older ones are outside
 // Instagram's private-reply window anyway, so a DM to them would just fail.
@@ -69,7 +70,14 @@ function errMessage(error: unknown): string {
 /** One reconciliation pass across every active campaign. */
 export async function reconcileComments(): Promise<void> {
   const automations = await prisma.automation.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      // Facebook Page campaigns are swept only when Page support is switched
+      // on; otherwise they are left alone exactly as before it existed.
+      ...(facebookPagesEnabled()
+        ? {}
+        : { instagramAccount: { provider: { not: "FACEBOOK" as const } } }),
+    },
     select: {
       id: true,
       name: true,
@@ -135,7 +143,7 @@ async function sweepCampaign({
       instagramId: string;
       username: string;
       accessToken: string;
-      provider: "META" | "ZERNIO";
+      provider: "META" | "ZERNIO" | "FACEBOOK";
       workspaceId: string;
       zernioAccountId: string | null;
     };

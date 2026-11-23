@@ -643,8 +643,10 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
         context: accessToken,
         recipientId: commenterId,
       });
+      // Neither Zernio nor a Facebook Page can always tell, so only a
+      // definite "not following" sends the prompt there.
       sendFollowPrompt =
-        accessToken.provider === "ZERNIO"
+        accessToken.provider === "ZERNIO" || accessToken.provider === "FACEBOOK"
           ? alreadyFollows === false
           : alreadyFollows !== true;
     }
@@ -1410,7 +1412,7 @@ async function processMessage(job: Job<ProcessMessageJob>): Promise<void> {
         recipientId: senderId,
       });
       sendFollowPrompt =
-        accessToken.provider === "ZERNIO"
+        accessToken.provider === "ZERNIO" || accessToken.provider === "FACEBOOK"
           ? follows === false
           : follows !== true;
     }

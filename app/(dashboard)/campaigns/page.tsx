@@ -10,7 +10,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AccountSelect, { type AccountOption } from "@/components/account-select";
+import AccountSelect, { accountLabel, type AccountOption } from "@/components/account-select";
 import { readCache, writeCache } from "@/lib/client-cache";
 
 interface Campaign {
@@ -39,6 +39,7 @@ interface Campaign {
   instagramAccount: {
     username: string;
     instagramId: string;
+    provider?: AccountOption["provider"];
   };
   reportShareSlug: string | null;
   reportShareEnabled: boolean;
@@ -421,7 +422,7 @@ export default function CampaignsPage() {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h3 className="text-sm font-semibold truncate">{auto.name}</h3>
                   <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-muted">
-                    @{auto.instagramAccount.username}
+                    {accountLabel(auto.instagramAccount)}
                   </span>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full font-medium ${

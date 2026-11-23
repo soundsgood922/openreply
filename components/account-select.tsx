@@ -8,6 +8,14 @@ export interface AccountOption {
   username: string;
   instagramId: string;
   name?: string | null;
+  provider?: "META" | "ZERNIO" | "FACEBOOK";
+}
+
+/** "@handle" for Instagram; a Facebook Page is labelled as one. */
+export function accountLabel(account: Pick<AccountOption, "username" | "provider">) {
+  return account.provider === "FACEBOOK"
+    ? `FB 粉專 · ${account.username}`
+    : `@${account.username}`;
 }
 
 interface AccountSelectProps {
@@ -39,7 +47,7 @@ export default function AccountSelect({
         {includeAll && <option value="all">{t("All accounts")}</option>}
         {accounts.map((account) => (
           <option key={account.id} value={account.id}>
-            @{account.username}
+            {accountLabel(account)}
           </option>
         ))}
       </select>

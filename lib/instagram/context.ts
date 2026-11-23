@@ -7,6 +7,9 @@ export type InstagramContext =
   // address the account by id. It is carried for both auth modes so callers
   // never have to care which one is configured.
   | { provider: "META"; accessToken: string; instagramId: string }
+  // A Facebook Page: accessToken is the Page token and instagramId holds the
+  // Page id (see the FACEBOOK value of InstagramProvider).
+  | { provider: "FACEBOOK"; accessToken: string; instagramId: string }
   | {
       provider: "ZERNIO";
       apiKey: string;
@@ -16,7 +19,7 @@ export type InstagramContext =
     };
 
 export type ProviderAccount = {
-  provider: "META" | "ZERNIO";
+  provider: "META" | "ZERNIO" | "FACEBOOK";
   workspaceId: string;
   zernioAccountId: string | null;
   instagramId: string;
@@ -35,6 +38,12 @@ export async function createInstagramContext(
   account: ProviderAccount,
   operationId?: string
 ): Promise<InstagramContext> {
+  if (account.provider === "FACEBOOK")
+    return {
+      provider: "FACEBOOK",
+      accessToken: decryptToken(account.accessToken),
+      instagramId: account.instagramId,
+    };
   if (account.provider !== "ZERNIO")
     return {
       provider: "META",

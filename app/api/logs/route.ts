@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       take: limit,
       include: {
         automation: { select: { name: true, keywords: true } },
-        instagramAccount: { select: { username: true } },
+        instagramAccount: { select: { username: true, provider: true } },
       },
     }),
     prisma.dmLog.count({ where }),

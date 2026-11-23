@@ -423,6 +423,10 @@ enum OperationalEventLevel {
 enum InstagramProvider {
   META
   ZERNIO
+  /// A Facebook Page (not an Instagram account) connected with a Page token.
+  /// Its row stores the Page id in instagramId so campaigns, delivery logs and
+  /// tracked links work unchanged. Only processed when FACEBOOK_PAGES_ENABLED.
+  FACEBOOK
 }
 
 model ZernioConnection {

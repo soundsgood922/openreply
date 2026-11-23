@@ -9,6 +9,8 @@ export async function getUserFollowStatus({
   context: InstagramContext;
   recipientId: string;
 }): Promise<boolean | null> {
+  // Messenger exposes no follow status for a Page.
+  if (context.provider === "FACEBOOK") return null;
   if (context.provider === "META")
     return meta.getUserFollowStatus(context.accessToken, recipientId);
   try {
@@ -33,6 +35,7 @@ export async function getRecipientUsername({
   context: InstagramContext;
   recipientId: string;
 }): Promise<string | null> {
+  if (context.provider === "FACEBOOK") return null;
   if (context.provider === "META")
     return meta.getUserUsername(context.accessToken, recipientId);
   return null;
@@ -47,6 +50,10 @@ export async function getMediaInsights({
   mediaId: string;
   metrics: string[];
 }): Promise<meta.InstagramMediaInsights> {
+  if (context.provider === "FACEBOOK")
+    throw new meta.PermissionError(
+      "Post insights are not supported for Facebook Pages yet"
+    );
   if (context.provider === "META")
     return meta.getMediaInsights(context.accessToken, mediaId, metrics);
   const result = await zernioRequest<{
@@ -90,6 +97,7 @@ export async function getFollowerCountSeries({
   context: InstagramContext;
   igUserId: string;
 }): Promise<meta.FollowerCountPoint[] | null> {
+  if (context.provider === "FACEBOOK") return null;
   if (context.provider === "META")
     return meta.getFollowerCountSeries(context.accessToken, igUserId);
   return null;

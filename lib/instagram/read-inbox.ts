@@ -9,6 +9,7 @@ export async function getConversations({
   context: InstagramContext;
   igUserId: string;
 }): Promise<meta.InstagramConversation[]> {
+  if (context.provider === "FACEBOOK") return [];
   if (context.provider === "META")
     return meta.getConversations(context.accessToken, igUserId);
   const result = await zernioRequest<{
@@ -46,6 +47,7 @@ export async function getConversationMessages({
   context: InstagramContext;
   conversationId: string;
 }): Promise<meta.InstagramMessage[]> {
+  if (context.provider === "FACEBOOK") return [];
   if (context.provider === "META")
     return meta.getConversationMessages(context.accessToken, conversationId);
   const result = await zernioRequest<{

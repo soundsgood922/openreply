@@ -6,6 +6,11 @@ import {
   verifyWebhookSignature,
 } from "@/lib/meta/webhook";
 import { processInstagramWebhook } from "@/lib/queue/process-webhook";
+import { facebookPagesEnabled } from "@/lib/facebook/flag";
+import {
+  processFacebookWebhook,
+  type PageWebhookPayload,
+} from "@/lib/facebook/process-webhook";
 
 
 export async function GET(request: NextRequest) {
@@ -67,6 +72,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Page events (object "page") belong to connected Facebook Pages. With Page
+    // support switched off they fall through to the Instagram handler, which
+    // ignores anything that is not object "instagram" — today's behaviour.
+    if (
+      facebookPagesEnabled() &&
+      (payload as { object?: unknown } | null)?.object === "page"
+    ) {
+      await processFacebookWebhook(payload as PageWebhookPayload);
+      return NextResponse.json({ success: true });
+    }
     await processInstagramWebhook({ payload: payload as Parameters<typeof parseCommentEvents>[0], provider: 'META' });
     return NextResponse.json({ success: true });
   } catch {

@@ -21,7 +21,7 @@ interface SettingsData {
   } | null;
   instagramAccounts: Array<
     AccountOption & {
-      provider?: "META" | "ZERNIO";
+      provider?: "META" | "ZERNIO" | "FACEBOOK";
       tokenExpiresAt: string | null;
       webhookSubscribed: boolean;
     }
@@ -196,10 +196,10 @@ export default function SettingsPage() {
               >
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    @{account.username}
+                    {account.provider === "FACEBOOK" ? `FB 粉專 · ${account.username}` : `@${account.username}`}
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    {account.provider === "ZERNIO" ? t("Connected via Zernio") : <>{t("Token expires")}{" "}
+                    {account.provider === "ZERNIO" ? t("Connected via Zernio") : account.provider === "FACEBOOK" ? "粉專權杖（不會過期）" : <>{t("Token expires")}{" "}
                     {account.tokenExpiresAt
                       ? new Date(account.tokenExpiresAt).toLocaleDateString(locale)
                       : t("not available")}</>}{" "}

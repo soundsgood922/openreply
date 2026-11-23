@@ -87,7 +87,7 @@ export interface OverviewResponse {
     interactions: number;
   };
   posts: OverviewPost[];
-  provider?: "META" | "ZERNIO";
+  provider?: "META" | "ZERNIO" | "FACEBOOK";
   limitations?: string[];
 }
 
@@ -118,6 +118,15 @@ export async function GET(request: NextRequest) {
       },
       { status: 400 }
     );
+  }
+
+  // Page analytics are not built yet; say so instead of failing on calls
+  // that only exist for Instagram accounts.
+  if (account.provider === "FACEBOOK") {
+    return NextResponse.json({
+      success: false,
+      error: "Facebook 粉專的數據總覽尚未支援，請到 Meta Business Suite 查看。",
+    });
   }
 
   try {

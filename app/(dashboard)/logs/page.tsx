@@ -8,7 +8,7 @@
 
 import { useI18n } from "@/lib/i18n/provider";
 import { useEffect, useState, useCallback } from "react";
-import AccountSelect, { type AccountOption } from "@/components/account-select";
+import AccountSelect, { accountLabel, type AccountOption } from "@/components/account-select";
 import StatusBadge from "@/components/status-badge";
 
 interface DmLog {
@@ -20,7 +20,7 @@ interface DmLog {
   errorMessage: string | null;
   createdAt: string;
   automation: { name: string; keywords: string[] };
-  instagramAccount: { username: string };
+  instagramAccount: { username: string; provider?: AccountOption["provider"] };
 }
 
 interface Pagination {
@@ -180,7 +180,7 @@ export default function LogsPage() {
                       <span className="text-muted">{log.automation.name}</span>
                     </td>
                     <td className="px-4 py-4 sm:px-6">
-                      <span className="text-muted">@{log.instagramAccount.username}</span>
+                      <span className="text-muted">{accountLabel(log.instagramAccount)}</span>
                     </td>
                     <td className="px-4 py-4 sm:px-6">
                       <StatusBadge status={log.status} />

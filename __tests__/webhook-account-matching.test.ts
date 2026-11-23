@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const findMany = vi.fn();
-const webhookCreate = vi.fn(async () => ({ id: "evt_1" }));
-const webhookUpdate = vi.fn();
-const queueAdd = vi.fn();
+const findMany = vi.fn((..._args: unknown[]) => undefined as unknown);
+const webhookCreate = vi.fn(async (..._args: unknown[]) => ({ id: "evt_1" }));
+const webhookUpdate = vi.fn((..._args: unknown[]) => undefined as unknown);
+const queueAdd = vi.fn((..._args: unknown[]) => undefined as unknown);
 
 vi.mock("@/lib/db/client", () => ({
   prisma: {
