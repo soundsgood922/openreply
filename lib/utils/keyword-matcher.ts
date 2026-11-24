@@ -155,6 +155,32 @@ export function foldDiacritics(text: string): string {
   return out.normalize("NFC");
 }
 
+// Emoji, including flags (regional indicator pairs).
+const EMOJI = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}]/u;
+// Presentation selectors and skin tones: ❤ and ❤️, 👍 and 👍🏽 are the same
+// emoji to a commenter.
+const EMOJI_VARIANTS = /[\u{FE0E}\u{FE0F}\u{1F3FB}-\u{1F3FF}]/gu;
+
+function normalizeEmoji(text: string): string {
+  return text.normalize("NFC").replace(EMOJI_VARIANTS, "").replace(/\s+/g, "");
+}
+
+/**
+ * A keyword made only of emoji (🔥, ❤️, 📚📚). The text pipeline below strips
+ * emoji from both sides, so such a keyword would compare as empty and never
+ * match; it is matched as an emoji sequence instead. A keyword with any
+ * letters or numbers in it ("📚書單") keeps the text pipeline, unchanged.
+ */
+export function isEmojiKeyword(keyword: string): boolean {
+  return EMOJI.test(keyword) && stripSpecialCharacters(keyword) === "";
+}
+
+/** The comment contains the emoji keyword, ignoring tone and variation. */
+function matchesEmojiKeyword(commentText: string, keyword: string): boolean {
+  const target = normalizeEmoji(keyword);
+  return target !== "" && normalizeEmoji(commentText).includes(target);
+}
+
 /**
  * Check if a comment text matches any of the given keywords.
  *
@@ -177,6 +203,14 @@ export function matchKeywords(
     return { matched: false, matchedKeyword: null };
   }
 
+  // Emoji keywords first: a comment of nothing but emoji cleans to an empty
+  // string below and would return before they were ever checked.
+  for (const keyword of keywords) {
+    if (isEmojiKeyword(keyword) && matchesEmojiKeyword(commentText, keyword)) {
+      return { matched: true, matchedKeyword: keyword };
+    }
+  }
+
   const cleanedText = foldDiacritics(
     stripSpecialCharacters(normalizeArabicScript(commentText))
   ).toLowerCase();
@@ -186,6 +220,7 @@ export function matchKeywords(
   }
 
   for (const keyword of keywords) {
+    if (isEmojiKeyword(keyword)) continue;
     const cleanedKeyword = foldDiacritics(
       stripSpecialCharacters(normalizeArabicScript(keyword))
     ).toLowerCase();
