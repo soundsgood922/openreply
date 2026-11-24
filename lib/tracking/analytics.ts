@@ -100,3 +100,34 @@ export function normalizeTopKeywords(rows: KeywordCountRow[], limit = 5) {
     .sort((a, b) => b.count - a.count || a.keyword.localeCompare(b.keyword))
     .slice(0, limit);
 }
+
+/**
+ * A two-step campaign logs each person twice: once for the comment (the
+ * opening DM) and once for the button tap, whose row is keyed "reveal:<id>"
+ * and carries the link. Counting both as runs doubles the triggers, and
+ * dividing clicks by both sends halves the click rate, so the two are told
+ * apart here.
+ */
+export const BUTTON_TAP_PREFIX = "reveal:";
+export const BUTTON_TAP_WHERE = {
+  commentId: { startsWith: BUTTON_TAP_PREFIX },
+} as const;
+export const COMMENT_WHERE = { NOT: BUTTON_TAP_WHERE } as const;
+
+/**
+ * How many people received the link. With an opening DM the comment's own
+ * DM is only the opening message and the link goes out on the button tap;
+ * without one the comment's DM carries it (taps left over from an earlier
+ * two-step period carried it too).
+ */
+export function countLinkRecipients({
+  openingDmEnabled,
+  commentSent,
+  tapSent,
+}: {
+  openingDmEnabled: boolean;
+  commentSent: number;
+  tapSent: number;
+}): number {
+  return openingDmEnabled ? tapSent : commentSent + tapSent;
+}

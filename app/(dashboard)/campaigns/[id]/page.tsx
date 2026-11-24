@@ -51,6 +51,9 @@ interface Campaign {
     skipped: number;
     failed: number;
     clicks: number;
+    runs: number;
+    claims: number;
+    linkRecipients: number;
     ctr: number;
   };
 }
@@ -163,6 +166,10 @@ export default function CampaignDetailPage() {
     : campaign.keywords.join(", ") || t("No keywords");
 
   const metrics = [
+    { label: "觸發", value: campaign.analytics.runs },
+    ...(campaign.openingDmEnabled || campaign.analytics.claims > 0
+      ? [{ label: "按鈕領取", value: campaign.analytics.claims }]
+      : []),
     { label: t("Sends"), value: campaign.analytics.sent },
     { label: t("Clicks"), value: campaign.analytics.clicks },
     { label: t("CTR"), value: `${campaign.analytics.ctr}%` },

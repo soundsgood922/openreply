@@ -3,7 +3,9 @@ import { z } from "zod";
 import { getCurrentWorkspaceId } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import {
+  BUTTON_TAP_WHERE,
   calculateCtr,
+  countLinkRecipients,
   CLICK_ROW_SELECT,
   countUniqueClicksBy,
   normalizeTopKeywords,
@@ -186,10 +188,15 @@ export async function GET(request: NextRequest) {
     })
   );
 
-  const [statusCounts, clickRows, keywordCounts] = await Promise.all([
+  const [statusCounts, tapCounts, clickRows, keywordCounts] = await Promise.all([
     prisma.dmLog.groupBy({
       by: ["automationId", "status"],
       where: { workspaceId },
+      _count: { _all: true },
+    }),
+    prisma.dmLog.groupBy({
+      by: ["automationId", "status"],
+      where: { workspaceId, ...BUTTON_TAP_WHERE },
       _count: { _all: true },
     }),
     prisma.linkClick.findMany({
@@ -210,6 +217,11 @@ export async function GET(request: NextRequest) {
       skipped: number;
       failed: number;
       clicks: number;
+      // Comments that triggered the campaign (button taps excluded).
+      runs: number;
+      // Button taps that delivered the link (two-step campaigns).
+      claims: number;
+      tapRows: number;
       topKeywords: { keyword: string; count: number }[];
     }
   >();
@@ -220,6 +232,9 @@ export async function GET(request: NextRequest) {
       skipped: 0,
       failed: 0,
       clicks: 0,
+      runs: 0,
+      claims: 0,
+      tapRows: 0,
       topKeywords: [],
     });
   }
@@ -231,6 +246,13 @@ export async function GET(request: NextRequest) {
     if (row.status === "SENT") item.sent += count;
     if (row.status === "FAILED") item.failed += count;
     if (row.status.startsWith("SKIPPED_")) item.skipped += count;
+  }
+
+  for (const row of tapCounts) {
+    const item = analytics.get(row.automationId);
+    if (!item) continue;
+    item.tapRows += row._count._all;
+    if (row.status === "SENT") item.claims += row._count._all;
   }
 
   const clickCounts = countUniqueClicksBy(clickRows, (row) => row.automationId);
@@ -262,8 +284,17 @@ export async function GET(request: NextRequest) {
         skipped: 0,
         failed: 0,
         clicks: 0,
+        runs: 0,
+        claims: 0,
+        tapRows: 0,
         topKeywords: [],
       };
+      const { tapRows, ...counts } = item;
+      const linkRecipients = countLinkRecipients({
+        openingDmEnabled: automation.openingDmEnabled,
+        commentSent: item.sent - item.claims,
+        tapSent: item.claims,
+      });
 
       return {
         ...automation,
@@ -275,8 +306,10 @@ export async function GET(request: NextRequest) {
           ? buildReportUrl(automation.reportShareSlug)
           : null,
         analytics: {
-          ...item,
-          ctr: calculateCtr(item.clicks, item.sent),
+          ...counts,
+          runs: automation._count.dmLogs - tapRows,
+          linkRecipients,
+          ctr: calculateCtr(item.clicks, linkRecipients),
         },
       };
     }),

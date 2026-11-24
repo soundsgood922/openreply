@@ -26,6 +26,7 @@ interface DashboardStats {
   clicksThisMonth: number;
   totalClicks: number;
   ctrThisMonth: number;
+  buttonClaimsMonth: number;
   instagramAccounts: AccountOption[];
   selectedInstagramAccountId: string | null;
   topKeywords: { keyword: string; count: number }[];
@@ -70,8 +71,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
-          {[...Array(6)].map((_, i) => (
+        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4">
+          {[...Array(7)].map((_, i) => (
             <div key={i} className="panel rounded p-5 h-32">
               <div className="w-10 h-10 rounded bg-surface-hover" />
               <div className="mt-4 h-6 w-16 bg-surface-hover rounded" />
@@ -115,12 +116,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4">
         <StatCard
           label={t("Active Campaigns")}
           value={stats?.activeAutomations ?? 0}
         />
         <StatCard label={t("DMs Sent")} value={stats?.dmsSentMonth ?? 0} />
+        <StatCard label="按鈕領取" value={stats?.buttonClaimsMonth ?? 0} />
         <StatCard label={t("Skipped")} value={stats?.dmsSkippedMonth ?? 0} />
         <StatCard label={t("Failed")} value={stats?.dmsFailedMonth ?? 0} />
         <StatCard label={t("Clicks")} value={stats?.clicksThisMonth ?? 0} />

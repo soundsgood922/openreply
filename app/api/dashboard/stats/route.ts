@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId, getCurrentWorkspaceId } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import {
+  BUTTON_TAP_WHERE,
+  COMMENT_WHERE,
   calculateCtr,
   CLICK_ROW_SELECT,
   countUniqueClicks,
@@ -179,6 +181,27 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // Sends that carried the link this month: every send except the opening
+  // DM of a campaign that has one (its link goes out on the button tap).
+  const linkDeliveriesMonth = await prisma.dmLog.count({
+    where: {
+      workspaceId,
+      status: "SENT",
+      createdAt: { gte: monthStart },
+      ...accountFilter,
+      NOT: { AND: [COMMENT_WHERE, { automation: { openingDmEnabled: true } }] },
+    },
+  });
+  const buttonClaimsMonth = await prisma.dmLog.count({
+    where: {
+      workspaceId,
+      status: "SENT",
+      createdAt: { gte: monthStart },
+      ...accountFilter,
+      ...BUTTON_TAP_WHERE,
+    },
+  });
+
   const clicksThisMonth = countUniqueClicks(clickRowsThisMonth);
   const totalClicks = countUniqueClicks(allClickRows);
 
@@ -219,7 +242,8 @@ export async function GET(request: NextRequest) {
       totalDMs,
       clicksThisMonth,
       totalClicks,
-      ctrThisMonth: calculateCtr(clicksThisMonth, dmsSentMonth),
+      buttonClaimsMonth,
+      ctrThisMonth: calculateCtr(clicksThisMonth, linkDeliveriesMonth),
       topKeywords,
       dailyDMs,
       recentLogs,

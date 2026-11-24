@@ -59,6 +59,9 @@ interface Campaign {
     skipped: number;
     failed: number;
     clicks: number;
+    runs: number;
+    claims: number;
+    linkRecipients: number;
     ctr: number;
     topKeywords: { keyword: string; count: number }[];
   };
@@ -473,8 +476,16 @@ export default function CampaignsPage() {
                 {/* Stats */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-zinc-500">
                   <span className="font-medium text-foreground">
-                    {auto._count.dmLogs} {t("runs")}
+                    {auto.analytics.runs} {t("runs")}
                   </span>
+                  {(auto.openingDmEnabled || auto.analytics.claims > 0) && (
+                    <>
+                      <span>·</span>
+                      <span className="font-medium text-foreground">
+                        {auto.analytics.claims} 按鈕領取
+                      </span>
+                    </>
+                  )}
                   <span>·</span>
                   <span className="font-medium text-foreground">
                     {auto.analytics.ctr}{t("% CTR")}

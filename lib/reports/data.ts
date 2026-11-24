@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db/client";
 import type { Locale } from "@/lib/i18n";
 import {
+  BUTTON_TAP_WHERE,
   calculateCtr,
+  countLinkRecipients,
   CLICK_ROW_SELECT,
   countUniqueClicks,
   countUniqueClicksBy,
@@ -44,6 +46,7 @@ export async function getCampaignReportBySlug(shareSlug: string, locale: Locale 
       postUrl: true,
       keywords: true,
       isActive: true,
+      openingDmEnabled: true,
       createdAt: true,
       updatedAt: true,
       reportShareSlug: true,
@@ -72,7 +75,7 @@ export async function getCampaignReportBySlug(shareSlug: string, locale: Locale 
     return null;
   }
 
-  const [statusRows, clickRows, keywordRows, latestSentLog] =
+  const [statusRows, clickRows, keywordRows, latestSentLog, tapSent] =
     await Promise.all([
       prisma.dmLog.groupBy({
         by: ["status"],
@@ -106,6 +109,14 @@ export async function getCampaignReportBySlug(shareSlug: string, locale: Locale 
         },
         orderBy: { dmSentAt: "desc" },
         select: { dmSentAt: true, createdAt: true },
+      }),
+      prisma.dmLog.count({
+        where: {
+          workspaceId: automation.workspaceId,
+          automationId: automation.id,
+          status: "SENT",
+          ...BUTTON_TAP_WHERE,
+        },
       }),
     ]);
 
@@ -173,7 +184,15 @@ export async function getCampaignReportBySlug(shareSlug: string, locale: Locale 
       skipped: statusSummary.skipped,
       failed: statusSummary.failed,
       clicks: clickCount,
-      ctr: calculateCtr(clickCount, statusSummary.sent),
+      claims: tapSent,
+      ctr: calculateCtr(
+        clickCount,
+        countLinkRecipients({
+          openingDmEnabled: automation.openingDmEnabled,
+          commentSent: statusSummary.sent - tapSent,
+          tapSent,
+        })
+      ),
       latestSentAt: latestSentLog?.dmSentAt ?? latestSentLog?.createdAt ?? null,
     },
     topKeywords,
