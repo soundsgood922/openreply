@@ -8,7 +8,7 @@
 
 import { useI18n } from "@/lib/i18n/provider";
 import { useEffect, useState, useCallback } from "react";
-import AccountSelect, { accountLabel, type AccountOption } from "@/components/account-select";
+import AccountSelect, { PlatformTag, type AccountOption } from "@/components/account-select";
 import StatusBadge from "@/components/status-badge";
 
 interface DmLog {
@@ -170,7 +170,11 @@ export default function LogsPage() {
                   <tr key={log.id} className="hover:bg-surface-hover/50 transition-colors">
                     <td className="px-4 py-4 sm:px-6">
                       <span className="font-medium text-foreground">
-                        @{log.commenterName ?? log.commenterId.slice(0, 8)}
+                        {log.commenterName
+                          ? `@${log.commenterName}`
+                          : log.commenterId.startsWith("fb_comment_")
+                            ? "FB 粉絲（未提供名稱）"
+                            : `@${log.commenterId.slice(0, 8)}`}
                       </span>
                     </td>
                     <td className="px-4 py-4 max-w-[200px] sm:px-6">
@@ -180,7 +184,7 @@ export default function LogsPage() {
                       <span className="text-muted">{log.automation.name}</span>
                     </td>
                     <td className="px-4 py-4 sm:px-6">
-                      <span className="text-muted">{accountLabel(log.instagramAccount)}</span>
+                      <PlatformTag account={log.instagramAccount} />
                     </td>
                     <td className="px-4 py-4 sm:px-6">
                       <StatusBadge status={log.status} />

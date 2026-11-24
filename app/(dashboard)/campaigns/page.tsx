@@ -10,7 +10,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AccountSelect, { accountLabel, type AccountOption } from "@/components/account-select";
+import AccountSelect, { PlatformTag, type AccountOption } from "@/components/account-select";
 import { readCache, writeCache } from "@/lib/client-cache";
 
 interface Campaign {
@@ -421,9 +421,7 @@ export default function CampaignsPage() {
               <div className="min-w-[12rem] flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h3 className="text-sm font-semibold truncate">{auto.name}</h3>
-                  <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-xs text-muted">
-                    {accountLabel(auto.instagramAccount)}
-                  </span>
+                  <PlatformTag account={auto.instagramAccount} />
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       auto.isActive

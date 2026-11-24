@@ -666,7 +666,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   setPostThumb(null);
                 }}
                 includeAll={false}
-                label={t("Instagram account")}
+                label="帳號平台"
               />
             </div>
           )}
