@@ -23,12 +23,16 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   workspaceName: string;
+  canSwitchBrand: boolean;
+  isPlatformAdmin: boolean;
 }
 
 export default function Sidebar({
   isOpen,
   onClose,
   workspaceName,
+  canSwitchBrand,
+  isPlatformAdmin,
 }: SidebarProps) {
   const { t } = useI18n();
   const pathname = usePathname();
@@ -58,8 +62,17 @@ export default function Sidebar({
           style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top))" }}
         >
           <Link href="/dashboard" className="text-base font-semibold">
-            OpenReply
+            {workspaceName}
           </Link>
+          {canSwitchBrand && (
+            <Link
+              href="/brands"
+              onClick={onClose}
+              className="mt-1 block text-xs text-accent hover:underline"
+            >
+              切換品牌
+            </Link>
+          )}
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -85,6 +98,20 @@ export default function Sidebar({
               </Link>
             );
           })}
+          {isPlatformAdmin && (
+            <Link
+              href="/admin"
+              onClick={onClose}
+              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+              className={`mt-4 block px-3 py-2.5 rounded text-sm border-t border-border ${
+                pathname.startsWith("/admin")
+                  ? "bg-surface-hover text-foreground font-medium"
+                  : "text-muted hover:text-foreground hover:bg-surface-hover"
+              }`}
+            >
+              品牌管理
+            </Link>
+          )}
         </nav>
 
         <div className="px-5 py-4 border-t border-border">

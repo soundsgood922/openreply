@@ -96,6 +96,20 @@ export function isEmailAllowedToSignIn(
   return allowed.includes(email.toLowerCase());
 }
 
+/**
+ * People who run the whole deployment (every brand), from the comma-separated
+ * PLATFORM_ADMIN_EMAILS. They get the brand overview page; nobody else sees it.
+ * Unset means nobody.
+ */
+export function isPlatformAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return (process.env.PLATFORM_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(email.toLowerCase());
+}
+
 export const serverEnvSchema = z.object({
   NEXTAUTH_URL: z.string().url(),
   NEXTAUTH_SECRET: z.string().min(16),

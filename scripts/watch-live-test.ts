@@ -11,12 +11,15 @@
  */
 import { prisma } from "../lib/db/client";
 
-const OUR_IDS = ["17841450929116626", "102026719003284"];
 
 async function main() {
   const timeoutMs = Number(process.argv[2] ?? 900) * 1000;
   const lingerMs = Number(process.argv[3] ?? 45) * 1000;
   const start = new Date();
+  // Every connected account and Page, across all brands.
+  const OUR_IDS = (
+    await prisma.instagramAccount.findMany({ select: { instagramId: true } })
+  ).map((a) => a.instagramId);
   const deadline = Date.now() + timeoutMs;
   console.log(`watching from ${start.toISOString()} for ${timeoutMs / 1000}s`);
 

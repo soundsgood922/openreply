@@ -24,14 +24,14 @@ const pageTitles: Record<string, StaticMessageKey> = {
 
 interface TopBarProps {
   onMenuClick: () => void;
+  brandName: string;
   instagramUsername: string | null;
   instagramAccountCount: number;
 }
 
 export default function TopBar({
   onMenuClick,
-  instagramUsername,
-  instagramAccountCount,
+  brandName,
 }: TopBarProps) {
   const { t } = useI18n();
   const pathname = usePathname();
@@ -59,16 +59,10 @@ export default function TopBar({
         >
           {t("Menu")}
         </button>
-        <h1 className="truncate text-base font-semibold sm:text-lg">{t(title)}</h1>
+        <h1 className="truncate text-base font-semibold sm:text-lg">{pathname.startsWith("/admin") ? "品牌管理" : t(title)}</h1>
       </div>
 
-      {instagramAccountCount > 0 ? (
-        <p className="shrink-0 truncate text-sm text-muted">
-          {instagramAccountCount > 1
-            ? t("{count} accounts", { count: instagramAccountCount })
-            : `@${instagramUsername}`}
-        </p>
-      ) : null}
+      <p className="shrink-0 truncate text-sm text-muted">{brandName}</p>
     </header>
   );
 }
