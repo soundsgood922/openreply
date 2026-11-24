@@ -76,6 +76,23 @@ async function main() {
     })
   ).data as Page[];
 
+  // Pages reached through a business portfolio are granted to the token but
+  // missing from /me/accounts; their ids are in the token's granular scopes,
+  // and each can still be read (with its Page token) by id.
+  const granted = (
+    await get("/debug_token", { input_token: long.access_token, access_token: `${APP_ID}|${secret}` })
+  ).data.granular_scopes as { scope: string; target_ids?: string[] }[];
+  const grantedPageIds = granted.find((g) => g.scope === "pages_show_list")?.target_ids ?? [];
+  for (const id of grantedPageIds) {
+    if (pages.some((p) => p.id === id)) continue;
+    pages.push(
+      (await get(`/${id}`, {
+        fields: "id,name,access_token,instagram_business_account{id,username}",
+        access_token: long.access_token,
+      })) as Page
+    );
+  }
+
   const pageId = flag("--page");
   if (!pageId) {
     console.log("Pages this token can reach:");
