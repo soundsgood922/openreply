@@ -96,12 +96,12 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
             {t("Hello, {name}!", { name: stats?.userName ?? t("there") })}
           </h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t(connectedCount === 1 ? "{count} connected account" : "{count} connected accounts", { count: connectedCount })}
             {" · "}
             {t(stats?.contactsCount === 1 ? "{count} contact" : "{count} contacts", { count: stats?.contactsCount ?? 0 })}
             {" · "}
-            <a href="/logs" className="text-accent hover:underline">
+            <a href="/logs" className="text-primary hover:underline">
               {t("See activity")}
             </a>
           </p>
@@ -137,12 +137,12 @@ export default function DashboardPage() {
           <div className="flex items-end gap-1.5 h-40 sm:gap-2">
             {stats?.dailyDMs.map((day) => (
               <div key={label(day.date)} className="min-w-0 flex-1 h-full flex flex-col items-center gap-2">
-                <span className="text-xs text-muted font-medium">{day.count}</span>
+                <span className="text-xs text-muted-foreground font-medium">{day.count}</span>
                 {/* A percentage height needs a parent with a definite height, so
                     the bar sits in a wrapper that fills the column's free space. */}
                 <div className="w-full min-h-0 flex-1 flex items-end">
                   <div
-                    className="w-full rounded-sm bg-accent min-h-[4px]"
+                    className="w-full rounded-sm bg-primary min-h-[4px]"
                     style={{ height: `${Math.max((day.count / maxDM) * 100, 4)}%` }}
                   />
                 </div>
@@ -160,14 +160,14 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-foreground mb-4">{t("Top Keywords")}</h2>
           <div className="space-y-3">
             {stats?.topKeywords.length === 0 && (
-              <p className="text-sm text-muted py-8">{t("No keyword matches yet")}</p>
+              <p className="text-sm text-muted-foreground py-8">{t("No keyword matches yet")}</p>
             )}
             {stats?.topKeywords.map((keyword) => (
               <div key={keyword.keyword} className="flex items-center justify-between gap-3">
                 <span className="truncate text-sm font-medium text-foreground">
                   {keyword.keyword}
                 </span>
-                <span className="text-xs text-muted">{keyword.count}</span>
+                <span className="text-xs text-muted-foreground">{keyword.count}</span>
               </div>
             ))}
           </div>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-foreground mb-4">{t("Recent Activity")}</h2>
           <div className="space-y-3 max-h-60 overflow-y-auto">
             {stats?.recentLogs.length === 0 && (
-              <p className="text-sm text-muted text-center py-8">{t("No activity yet")}</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("No activity yet")}</p>
             )}
             {stats?.recentLogs.map((log) => (
               <div
@@ -189,7 +189,7 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-foreground truncate">
                     @{log.commenterName ?? "unknown"}
                   </p>
-                  <p className="text-xs text-muted truncate">
+                  <p className="text-xs text-muted-foreground truncate">
                     {log.instagramAccount
                       ? `@${log.instagramAccount.username} · `
                       : ""}

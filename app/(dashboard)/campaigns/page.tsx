@@ -287,7 +287,7 @@ export default function CampaignsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             {filtered.length !== automations.length
               ? t("{count} of {total} campaigns", { count: filtered.length, total: automations.length })
               : t(automations.length === 1 ? "{count} campaign" : "{count} campaigns", { count: automations.length })}
@@ -303,13 +303,13 @@ export default function CampaignsPage() {
           )}
           <Link
             href="/campaigns/import"
-            className="flex-1 rounded border border-border px-4 py-2 text-center text-sm font-medium text-muted hover:text-foreground sm:flex-none"
+            className="flex-1 whitespace-nowrap rounded-lg border border-border bg-background px-4 py-2 text-center text-sm font-medium text-foreground shadow-xs hover:bg-muted sm:flex-none"
           >
             {t("Import")}
           </Link>
           <Link
             href="/campaigns/new"
-            className="flex-1 rounded bg-accent px-4 py-2 text-center text-sm font-medium text-white hover:bg-accent-hover sm:flex-none"
+            className="flex-1 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-center text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90 sm:flex-none"
           >
             {t("New Campaign")}
           </Link>
@@ -323,7 +323,7 @@ export default function CampaignsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("Search campaigns by name, keyword, or message…")}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
           />
           <div className="inline-flex shrink-0 rounded-lg bg-surface p-1">
             {(["all", "active", "paused"] as const).map((s) => (
@@ -333,8 +333,8 @@ export default function CampaignsPage() {
                 onClick={() => setStatusFilter(s)}
                 className={`rounded-md px-3 py-1.5 text-sm capitalize transition-colors ${
                   statusFilter === s
-                    ? "bg-background font-medium text-foreground ring-1 ring-accent/40"
-                    : "text-muted hover:text-foreground"
+                    ? "bg-background font-medium text-foreground ring-1 ring-primary/40"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {label(s)}
@@ -348,12 +348,12 @@ export default function CampaignsPage() {
       {automations.length === 0 && (
         <div className="panel rounded p-8 text-center sm:p-12">
           <h3 className="text-lg font-semibold mb-2">{t("No campaigns yet")}</h3>
-          <p className="text-sm text-muted mb-6 max-w-sm mx-auto">
+          <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
             {t("Create your first comment-to-DM campaign to turn a post or reel into a measurable conversation flow.")}
           </p>
           <Link
             href="/campaigns/new"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-accent text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-primary text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
           >
             {t("Create Campaign")}
           </Link>
@@ -362,7 +362,7 @@ export default function CampaignsPage() {
 
       {/* No matches for the current filter */}
       {automations.length > 0 && filtered.length === 0 && (
-        <div className="panel rounded p-8 text-center text-sm text-muted">
+        <div className="panel rounded p-8 text-center text-sm text-muted-foreground">
           {t("No campaigns match your search.")}
         </div>
       )}
@@ -429,7 +429,7 @@ export default function CampaignsPage() {
                     className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       auto.isActive
                         ? "bg-success/10 text-success"
-                        : "bg-zinc-500/10 text-muted"
+                        : "bg-zinc-500/10 text-muted-foreground"
                     }`}
                   >
                     {auto.isActive ? t("Active") : t("Paused")}
@@ -440,12 +440,12 @@ export default function CampaignsPage() {
                     </span>
                   )}
                   {auto.requireFollow && (
-                    <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {t("Follow gate")}
                     </span>
                   )}
                   {auto.trackedLinks.length >= 2 && (
-                    <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {t("2 links")}
                     </span>
                   )}
@@ -456,7 +456,7 @@ export default function CampaignsPage() {
                   {auto.keywords.map((kw) => (
                     <span
                       key={kw}
-                      className="px-2 py-0.5 rounded-md bg-accent/10 text-accent text-xs font-medium border border-accent/10"
+                      className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium border border-primary/10"
                     >
                       {kw}
                     </span>
@@ -464,7 +464,7 @@ export default function CampaignsPage() {
                 </div>
 
                 {/* DM preview */}
-                <p className="text-sm text-muted truncate">&ldquo;{auto.dmMessage}{t("”")}</p>
+                <p className="text-sm text-muted-foreground truncate">&ldquo;{auto.dmMessage}{t("”")}</p>
 
                 {/* Tracked link sent */}
                 {auto.trackedLinks[0]?.trackedUrl && (
@@ -508,7 +508,7 @@ export default function CampaignsPage() {
                     {auto.analytics.topKeywords.map((keyword) => (
                       <span
                         key={keyword.keyword}
-                        className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted"
+                        className="rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted-foreground"
                       >
                         {keyword.keyword}: {keyword.count}
                       </span>
@@ -526,7 +526,7 @@ export default function CampaignsPage() {
                 {auto.postUrl && (
                   <button
                     onClick={() => void copyReelUrl(auto)}
-                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-border-hover hover:text-foreground"
+                    className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-border-hover hover:text-foreground"
                   >
                     {copiedId === auto.id ? t("Copied!") : t("Copy URL")}
                   </button>
@@ -536,7 +536,7 @@ export default function CampaignsPage() {
                   onClick={() => toggleActive(auto.id, auto.isActive)}
                   className={`
                     relative w-11 h-6 rounded-full transition-colors
-                    ${auto.isActive ? "bg-accent" : "bg-zinc-300"}
+                    ${auto.isActive ? "bg-primary" : "bg-zinc-300"}
                   `}
                 >
                   <span
@@ -554,7 +554,7 @@ export default function CampaignsPage() {
                       setMenuOpenId((cur) => (cur === auto.id ? null : auto.id))
                     }
                     aria-label={t("More actions")}
-                    className="px-2 py-1 rounded text-lg leading-none text-muted hover:text-foreground"
+                    className="px-2 py-1 rounded text-lg leading-none text-muted-foreground hover:text-foreground"
                   >
                     ⋯
                   </button>

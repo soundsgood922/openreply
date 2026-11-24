@@ -55,7 +55,7 @@ export default function KeywordInput({ keywords, onChange, max = 10 }: KeywordIn
               type="button"
               onClick={() => removeKeyword(keyword)}
               aria-label={t("Remove {keyword}", { keyword })}
-              className="text-muted hover:text-error"
+              className="text-muted-foreground hover:text-error"
             >
               {t("Remove")}
             </button>
@@ -70,7 +70,7 @@ export default function KeywordInput({ keywords, onChange, max = 10 }: KeywordIn
           className="flex-1 min-w-[120px] bg-transparent text-sm text-foreground placeholder:text-zinc-500 outline-none"
         />
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-xs text-muted-foreground">
         {keywords.length}/{max} {t("keywords · Press Enter or comma to add")}
       </p>
     </div>

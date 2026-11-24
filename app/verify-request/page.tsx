@@ -22,11 +22,11 @@ export default async function VerifyRequestPage() {
 
         <div className="panel rounded p-8 text-center">
           <h2 className="text-lg font-semibold mb-2">{t("Check your email")}</h2>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted-foreground">
             {t("We sent you a secure sign-in link. Open it on this device to continue.")}
           </p>
           <p className="mt-6 text-sm">
-            <Link href="/login" className="text-accent hover:underline">
+            <Link href="/login" className="text-primary hover:underline">
               {t("Back to sign in")}
             </Link>
           </p>

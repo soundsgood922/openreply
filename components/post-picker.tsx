@@ -115,7 +115,7 @@ export default function PostPicker({
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-sm text-muted">{error === "Failed to load posts" ? t("Failed to load posts") : error}</p>
+        <p className="text-sm text-muted-foreground">{error === "Failed to load posts" ? t("Failed to load posts") : error}</p>
         <p className="text-xs text-zinc-500 mt-1">{t("Connect your Instagram account first")}</p>
       </div>
     );
@@ -124,7 +124,7 @@ export default function PostPicker({
   if (posts.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-sm text-muted">{t("No posts found")}</p>
+        <p className="text-sm text-muted-foreground">{t("No posts found")}</p>
       </div>
     );
   }
@@ -140,7 +140,7 @@ export default function PostPicker({
 
   return (
     <div className="space-y-2">
-      {limitations.map(note => <p key={note} className="text-xs text-muted">{note}</p>)}
+      {limitations.map(note => <p key={note} className="text-xs text-muted-foreground">{note}</p>)}
       <div className="flex items-center justify-between gap-2">
         <input
           value={query}
@@ -152,18 +152,18 @@ export default function PostPicker({
             setShown(PAGE_SIZE);
           }}
           placeholder={t("Search your posts by caption…")}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
         />
-        <span className="shrink-0 text-xs text-muted">{posts.length}</span>
+        <span className="shrink-0 text-xs text-muted-foreground">{posts.length}</span>
       </div>
       {visible.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted">
+        <p className="py-6 text-center text-sm text-muted-foreground">
           {t("No posts match “")}{query}{t("”")}
         </p>
       ) : (
         <>
           {usedPostIds && Object.keys(usedPostIds).length > 0 && (
-            <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted">
+            <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
               <span className="inline-block h-2.5 w-2.5 rounded-sm border border-warning/50" />
               {t("Already used")}
             </p>
@@ -195,7 +195,7 @@ export default function PostPicker({
               relative aspect-square rounded overflow-hidden border-2
               ${
                 isSelected
-                  ? "border-accent"
+                  ? "border-primary"
                   : isUsed
                     ? "border-warning/40 hover:border-warning/60"
                     : "border-border hover:border-border-hover"
@@ -212,7 +212,7 @@ export default function PostPicker({
               />
             ) : (
               <div className="w-full h-full bg-surface flex items-center justify-center">
-                <span className="text-xs text-muted">{t("No image")}</span>
+                <span className="text-xs text-muted-foreground">{t("No image")}</span>
               </div>
             )}
             {showVideo && (
@@ -230,7 +230,7 @@ export default function PostPicker({
               />
             )}
             {isSelected && (
-              <span className="absolute bottom-0 inset-x-0 bg-accent text-white text-xs py-1">
+              <span className="absolute bottom-0 inset-x-0 bg-primary text-white text-xs py-1">
                 {t("Selected")}
               </span>
             )}
@@ -242,7 +242,7 @@ export default function PostPicker({
             <button
               type="button"
               onClick={() => setShown((n) => n + PAGE_SIZE)}
-              className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+              className="w-full rounded-lg border border-border py-2 text-sm text-muted-foreground hover:text-foreground"
             >
               {t("Show")} {Math.min(PAGE_SIZE, remaining)} {t("more")}
             </button>

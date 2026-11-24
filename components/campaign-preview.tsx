@@ -366,7 +366,7 @@ function DmScreen({
       <div className="flex-1 space-y-3 px-3 py-4">
         {inboundMessage !== undefined && (
           <div className="flex justify-end">
-            <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm">
+            <div className="max-w-[80%] rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm">
               {inboundMessage || t("their message")}
             </div>
           </div>
@@ -383,7 +383,7 @@ function DmScreen({
               </div>
             </div>
             <div className="flex justify-end">
-              <div className="rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm">
+              <div className="rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm">
                 {openingDmButtonLabel || t("Button label")}
               </div>
             </div>
@@ -404,7 +404,7 @@ function DmScreen({
               </div>
             </div>
             <div className="flex justify-end">
-              <div className="rounded-2xl rounded-br-md bg-accent px-3 py-2 text-sm">
+              <div className="rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm">
                 {followPromptButtonLabel || "i'm following"}
               </div>
             </div>
@@ -468,7 +468,7 @@ function DmScreen({
       </div>
 
       <div className="flex items-center gap-2 px-3 py-3">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-white">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-white">
           {Ico.camera("h-4 w-4")}
         </span>
         <div className="flex-1 rounded-full bg-zinc-800 px-3 py-2 text-xs text-zinc-500">{t("Message…")}</div>
@@ -570,8 +570,8 @@ export default function CampaignPreview(props: CampaignPreviewProps) {
             onClick={() => onTabChange(t.key)}
             className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
               activeTab === t.key
-                ? "bg-background font-medium text-foreground ring-1 ring-accent/40"
-                : "text-muted hover:text-foreground"
+                ? "bg-background font-medium text-foreground ring-1 ring-primary/40"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t.label}

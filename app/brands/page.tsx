@@ -24,7 +24,7 @@ export default async function BrandsPage() {
     <div className="min-h-screen flex items-center justify-center px-6 py-10 bg-background">
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-semibold text-foreground text-center">選擇品牌</h1>
-        <p className="mt-2 text-sm text-muted text-center">要進入哪個品牌的後台？</p>
+        <p className="mt-2 text-sm text-muted-foreground text-center">要進入哪個品牌的後台？</p>
         <div className="mt-8 space-y-3">
           {memberships.map((m) => {
             const own = accounts.filter((a) => a.workspaceId === m.workspaceId);
@@ -33,17 +33,17 @@ export default async function BrandsPage() {
                 <input type="hidden" name="workspaceId" value={m.workspaceId} />
                 <button
                   type="submit"
-                  className={`panel w-full rounded p-4 text-left transition-colors hover:border-accent/50 ${
-                    m.workspaceId === active ? "border-accent/60" : ""
+                  className={`panel w-full rounded p-4 text-left transition-colors hover:border-primary/50 ${
+                    m.workspaceId === active ? "border-primary/60" : ""
                   }`}
                 >
                   <span className="flex items-center justify-between gap-3">
                     <span className="text-base font-semibold text-foreground">{m.workspace.name}</span>
                     {m.workspaceId === active && (
-                      <span className="text-xs text-accent">目前所在</span>
+                      <span className="text-xs text-primary">目前所在</span>
                     )}
                   </span>
-                  <span className="mt-1 block text-xs text-muted">
+                  <span className="mt-1 block text-xs text-muted-foreground">
                     {own.length === 0
                       ? "尚未連接帳號"
                       : own

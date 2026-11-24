@@ -1,6 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { Noto_Sans_TC } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+// Traditional Chinese UI font. CJK glyphs are served in unicode-range slices,
+// so only the characters a page uses are downloaded; preloading is off for
+// the same reason.
+const notoSansTC = Noto_Sans_TC({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+  preload: false,
+});
 
 export const metadata: Metadata = {
   title: "OpenReply - Open source Instagram comment-to-DM automation",
@@ -43,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-TW" className="h-full dark">
+    <html lang="zh-TW" className={cn("h-full", "font-sans", notoSansTC.variable)}>
       <body
         className="min-h-full bg-background text-foreground font-sans antialiased"
         // Clears the home indicator when installed; 0 everywhere else.

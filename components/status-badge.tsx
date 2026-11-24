@@ -2,18 +2,19 @@
 
 import type { StaticMessageKey } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/provider";
+
 /**
- * Status label for DM status. Plain text; color carries the state.
+ * Status pill for a DM log: the colour carries the state.
  */
 
-const statusConfig: Record<string, { text: string; label: StaticMessageKey }> = {
-  SENT: { text: "text-success", label: "Sent" },
-  FAILED: { text: "text-error", label: "Failed" },
-  PENDING: { text: "text-warning", label: "Pending" },
-  SKIPPED_DEDUP: { text: "text-muted", label: "Dedup" },
-  SKIPPED_RATE_LIMIT: { text: "text-warning", label: "Rate limited" },
-  SKIPPED_PLAN_LIMIT: { text: "text-warning", label: "Skipped" },
-  SKIPPED_NO_MATCH: { text: "text-muted", label: "No match" },
+const statusConfig: Record<string, { tone: string; label: StaticMessageKey }> = {
+  SENT: { tone: "bg-success/10 text-success", label: "Sent" },
+  FAILED: { tone: "bg-error/10 text-error", label: "Failed" },
+  PENDING: { tone: "bg-warning/10 text-warning", label: "Pending" },
+  SKIPPED_DEDUP: { tone: "bg-muted text-muted-foreground", label: "Dedup" },
+  SKIPPED_RATE_LIMIT: { tone: "bg-warning/10 text-warning", label: "Rate limited" },
+  SKIPPED_PLAN_LIMIT: { tone: "bg-warning/10 text-warning", label: "Skipped" },
+  SKIPPED_NO_MATCH: { tone: "bg-muted text-muted-foreground", label: "No match" },
 };
 
 interface StatusBadgeProps {
@@ -25,7 +26,9 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
   const config = statusConfig[status] ?? statusConfig.PENDING;
 
   return (
-    <span className={`shrink-0 whitespace-nowrap text-sm ${config.text}`}>
+    <span
+      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${config.tone}`}
+    >
       {t(config.label)}
     </span>
   );

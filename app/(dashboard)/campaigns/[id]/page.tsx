@@ -136,10 +136,10 @@ export default function CampaignDetailPage() {
   if (notFound || !campaign) {
     return (
       <div className="panel rounded p-8 text-center">
-        <p className="text-sm text-muted">{t("Campaign not found.")}</p>
+        <p className="text-sm text-muted-foreground">{t("Campaign not found.")}</p>
         <button
           onClick={() => router.push("/campaigns")}
-          className="mt-4 rounded border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+          className="mt-4 rounded border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
         >
           {t("Back to campaigns")}
         </button>
@@ -183,7 +183,7 @@ export default function CampaignDetailPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/campaigns"
-            className="text-sm text-muted hover:text-foreground"
+            className="text-sm text-muted-foreground hover:text-foreground"
           >
             {t("← Campaigns")}
           </Link>
@@ -194,7 +194,7 @@ export default function CampaignDetailPage() {
             className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${
               campaign.isActive
                 ? "bg-success/10 text-success"
-                : "bg-zinc-500/10 text-muted"
+                : "bg-zinc-500/10 text-muted-foreground"
             }`}
           >
             {campaign.isActive ? t("LIVE") : t("Paused")}
@@ -211,7 +211,7 @@ export default function CampaignDetailPage() {
                 className="h-14 w-14 rounded object-cover"
               />
             ) : (
-              <div className="grid h-14 w-14 place-items-center rounded bg-surface-hover text-[10px] text-muted">
+              <div className="grid h-14 w-14 place-items-center rounded bg-surface-hover text-[10px] text-muted-foreground">
                 {campaign.matchAnyPost || campaign.pendingNextReel ? "Any" : t("Post")}
               </div>
             )}
@@ -222,14 +222,14 @@ export default function CampaignDetailPage() {
         <Summary title={t("And this comment has")}>
           <FieldBox>{matchText}</FieldBox>
           {campaign.dmTriggerEnabled && (
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               {t("Also replies when someone DMs")}{" "}
               {campaign.matchAnyWord ? t("anything") : t("these words")}.
             </p>
           )}
           {publicReplies.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs text-muted">{t("Public reply under the post")}</p>
+              <p className="text-xs text-muted-foreground">{t("Public reply under the post")}</p>
               {publicReplies.map((m, i) => (
                 <FieldBox key={i}>{m}</FieldBox>
               ))}
@@ -279,7 +279,7 @@ export default function CampaignDetailPage() {
                       {link.trackedUrl ?? link.destinationUrl}
                     </p>
                   </div>
-                  <p className="text-xs text-muted">
+                  <p className="text-xs text-muted-foreground">
                     {link.label ? `${link.label} · ` : ""}{t("redirects to")}{" "}
                     <span className="break-all">{link.destinationUrl}</span>
                   </p>
@@ -291,7 +291,7 @@ export default function CampaignDetailPage() {
         {campaign.followUpEnabled && campaign.followUpMessage && (
           <Summary title={t("Then a follow-up message")}>
             <FieldBox>{campaign.followUpMessage}</FieldBox>
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               {campaign.followUpDelayMinutes && campaign.followUpDelayMinutes > 0
                 ? t("Sent {minutes} min after the link.", { minutes: campaign.followUpDelayMinutes })
                 : t("Sent right after the link.")}
@@ -314,7 +314,7 @@ export default function CampaignDetailPage() {
           <div className="flex items-center gap-2">
             <Link
               href={`/campaigns/${campaign.id}/edit`}
-              className="rounded border border-border px-3 py-1.5 text-sm text-muted hover:text-foreground"
+              className="rounded border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
             >
               {t("Edit")}
             </Link>
@@ -336,7 +336,7 @@ export default function CampaignDetailPage() {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {metrics.map((m) => (
               <div key={m.label} className="panel rounded p-4">
-                <p className="text-sm text-muted">{m.label}</p>
+                <p className="text-sm text-muted-foreground">{m.label}</p>
                 <p className="mt-1 text-2xl font-semibold text-foreground">
                   {m.value}
                 </p>
@@ -419,8 +419,8 @@ function TabButton({
       onClick={onClick}
       className={`border-b-2 pb-2 text-sm font-medium ${
         active
-          ? "border-accent text-foreground"
-          : "border-transparent text-muted hover:text-foreground"
+          ? "border-primary text-foreground"
+          : "border-transparent text-muted-foreground hover:text-foreground"
       }`}
     >
       {children}

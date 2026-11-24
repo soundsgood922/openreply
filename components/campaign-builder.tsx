@@ -92,15 +92,15 @@ function Radio({
       type="button"
       onClick={onSelect}
       className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
-        checked ? "border-accent bg-accent/5" : "border-border hover:border-border-hover"
+        checked ? "border-primary bg-primary/5" : "border-border hover:border-border-hover"
       }`}
     >
       <span
         className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-          checked ? "border-accent" : "border-zinc-500"
+          checked ? "border-primary" : "border-zinc-500"
         }`}
       >
-        {checked && <span className="h-2 w-2 rounded-full bg-accent" />}
+        {checked && <span className="h-2 w-2 rounded-full bg-primary" />}
       </span>
       <span className="flex-1 text-foreground">{children}</span>
     </button>
@@ -119,7 +119,7 @@ function Toggle({
       type="button"
       onClick={onToggle}
       className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-        on ? "bg-accent" : "bg-zinc-300"
+        on ? "bg-primary" : "bg-zinc-300"
       }`}
     >
       <span
@@ -545,10 +545,10 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   if (notFound) {
     return (
       <div className="panel rounded p-8 text-center">
-        <p className="text-sm text-muted">{t("Campaign not found.")}</p>
+        <p className="text-sm text-muted-foreground">{t("Campaign not found.")}</p>
         <button
           onClick={() => router.push("/campaigns")}
-          className="mt-4 rounded border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+          className="mt-4 rounded border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
         >
           {t("Back to campaigns")}
         </button>
@@ -559,11 +559,11 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   return (
     <div className="space-y-6">
       {importQueue && (
-        <div className="rounded border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
+        <div className="rounded border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <span className="font-medium text-foreground">
             {t("Importing {current} of {total}.", { current: importTotal - importQueue.length + 1, total: importTotal })}
           </span>{" "}
-          <span className="text-muted">
+          <span className="text-muted-foreground">
             {t("Fields are prefilled from your CSV. Pick the reel, edit anything, and save to load the next one — or Skip if you don’t want this one.")}
           </span>
         </div>
@@ -579,14 +579,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               </span>
               <span
                 className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                  isActive ? "bg-success/15 text-success" : "bg-zinc-500/15 text-muted"
+                  isActive ? "bg-success/15 text-success" : "bg-zinc-500/15 text-muted-foreground"
                 }`}
               >
                 {isActive ? t("LIVE") : t("PAUSED")}
               </span>
             </>
           ) : (
-            <span className="text-sm text-muted">{t("New campaign")}</span>
+            <span className="text-sm text-muted-foreground">{t("New campaign")}</span>
           )}
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -595,7 +595,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               type="button"
               onClick={skipRow}
               disabled={saving}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
               {importQueue.length > 1 ? t("Skip") : t("Skip & finish")}
             </button>
@@ -606,7 +606,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 type="button"
                 onClick={() => handleSubmit(false)}
                 disabled={saving}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
               >
                 {t("Stop")}
               </button>
@@ -615,7 +615,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 type="button"
                 onClick={() => handleSubmit(true)}
                 disabled={saving}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
               >
                 {t("Go Live")}
               </button>
@@ -624,7 +624,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             type="button"
             onClick={() => handleSubmit(mode === "new" ? true : isActive)}
             disabled={saving}
-            className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
           >
             {saving ? t("Saving…") : mode === "new" ? t("Go Live") : t("Save changes")}
           </button>
@@ -645,13 +645,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         <div className="space-y-3">
           <label className="text-sm font-semibold text-foreground">
             {t("Campaign name")}{" "}
-            <span className="font-normal text-muted">{t("(optional)")}</span>
+            <span className="font-normal text-muted-foreground">{t("(optional)")}</span>
           </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t("e.g. YC referral")}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
             maxLength={100}
           />
           {accounts.length > 1 && (
@@ -716,9 +716,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 value={keywordText}
                 onChange={(e) => setKeywordText(e.target.value)}
                 placeholder={t("Enter a word or multiple")}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
               />
-              <p className="text-xs text-muted">{t("Use commas to separate words")}</p>
+              <p className="text-xs text-muted-foreground">{t("Use commas to separate words")}</p>
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
                 <span className="text-sm text-foreground">{t("Match part of a word")}</span>
                 <Toggle
@@ -727,7 +727,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 />
               </div>
               {!wholeWordMatch && (
-                <p className="text-xs text-muted">
+                <p className="text-xs text-muted-foreground">
                   {t("Also fires when a keyword is part of a longer word, e.g. “link” in “links”.")}
                 </p>
               )}
@@ -750,7 +750,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             />
           </div>
           {dmTriggerEnabled && (
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               {matchMode === "any"
                 ? t("Every DM to this account gets the reply below — use with care.")
                 : t("A DM containing any of these words gets the same reply, no comment needed.")}
@@ -778,7 +778,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                     }
                     placeholder={t("Sent you a DM! 📩")}
                     maxLength={1000}
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
                   />
                   {publicReplyMessages.length > 1 && (
                     <button
@@ -788,7 +788,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                           prev.filter((_, idx) => idx !== i)
                         )
                       }
-                      className="shrink-0 px-2 text-muted hover:text-error"
+                      className="shrink-0 px-2 text-muted-foreground hover:text-error"
                       aria-label={t("Remove reply")}
                     >
                       ✕
@@ -802,12 +802,12 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   onClick={() =>
                     setPublicReplyMessages((prev) => [...prev, ""])
                   }
-                  className="text-xs font-medium text-accent hover:underline"
+                  className="text-xs font-medium text-primary hover:underline"
                 >
                   {t("+ Add another reply")}
                 </button>
               )}
-              <p className="text-xs text-muted">
+              <p className="text-xs text-muted-foreground">
                 {t("One is picked at random each time, so replies don't look identical.")}
               </p>
             </div>
@@ -830,14 +830,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   onChange={(e) => setOpeningDmMessage(e.target.value)}
                   placeholder={t("Hey there! I'm so happy you're here 😊")}
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
                   maxLength={1000}
                 />
                 <input
                   value={openingDmButtonLabel}
                   onChange={(e) => setOpeningDmButtonLabel(e.target.value)}
                   placeholder={t("Send me the link")}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
                   maxLength={64}
                 />
               </div>
@@ -860,17 +860,17 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   onChange={(e) => setFollowPromptMessage(e.target.value)}
                   placeholder={t("quick favor before i send your link. i don't make any money from this, it's free. if you want to support me, just don't unfollow after, and star the repo on github if it helps you. tap the button once you're following and i'll send it over")}
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
                   maxLength={1000}
                 />
                 <input
                   value={followPromptButtonLabel}
                   onChange={(e) => setFollowPromptButtonLabel(e.target.value)}
                   placeholder={t("i'm following")}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
                   maxLength={20}
                 />
-                <p className="text-xs text-muted">
+                <p className="text-xs text-muted-foreground">
                   {t("We send the link only after they tap the button and Instagram confirms the follow. If it can't be verified, we send it anyway.")}
                 </p>
               </div>
@@ -886,7 +886,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               onChange={(e) => setDmMessage(e.target.value)}
               placeholder={t("Write a message")}
               rows={3}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
               maxLength={1000}
             />
             {linkOpen ? (
@@ -896,14 +896,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   onChange={(e) => setTrackedDestinationUrl(e.target.value)}
                   onBlur={ensureLinkToken}
                   placeholder="https://yourlink.com/offer"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
                 />
                 <input
                   value={linkButtonLabel}
                   onChange={(e) => setLinkButtonLabel(e.target.value)}
                   placeholder={t("Button label (e.g. Open link)")}
                   maxLength={20}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
                 />
                 {secondLinkOpen ? (
                   <div className="space-y-2 border-t border-border pt-2">
@@ -911,21 +911,21 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                       value={secondaryDestinationUrl}
                       onChange={(e) => setSecondaryDestinationUrl(e.target.value)}
                       placeholder="https://yourlink.com/second"
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
                     />
                     <input
                       value={secondaryButtonLabel}
                       onChange={(e) => setSecondaryButtonLabel(e.target.value)}
                       placeholder={t("Second button label")}
                       maxLength={20}
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none"
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
                     />
                   </div>
                 ) : (
                   <button
                     type="button"
                     onClick={() => setSecondLinkOpen(true)}
-                    className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+                    className="w-full rounded-lg border border-border py-2 text-sm text-muted-foreground hover:text-foreground"
                   >
                     {t("+ Add A Second Link")}
                   </button>
@@ -935,12 +935,12 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               <button
                 type="button"
                 onClick={() => setLinkOpen(true)}
-                className="w-full rounded-lg border border-border py-2 text-sm text-muted hover:text-foreground"
+                className="w-full rounded-lg border border-border py-2 text-sm text-muted-foreground hover:text-foreground"
               >
                 {t("+ Add A Link")}
               </button>
             )}
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted-foreground">
               {"{link}"} {t("inserts the tracked link;")} {"{username}"} {t("personalizes.")}
             </p>
           </div>
@@ -961,11 +961,11 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                   onChange={(e) => setFollowUpMessage(e.target.value)}
                   placeholder={t("Btw just wanted to say thanks for following me, I appreciate the support 🙌")}
                   rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none resize-none"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
                   maxLength={1000}
                 />
                 <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-                  <span className="text-xs text-muted">{t("Send it")}</span>
+                  <span className="text-xs text-muted-foreground">{t("Send it")}</span>
                   <input
                     type="number"
                     min={0}
@@ -976,13 +976,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                         Math.max(0, Math.min(1440, Math.floor(Number(e.target.value) || 0)))
                       )
                     }
-                    className="w-20 rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground focus:border-accent/40 focus:outline-none"
+                    className="w-20 rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground focus:border-primary/40 focus:outline-none"
                   />
-                  <span className="text-xs text-muted">
+                  <span className="text-xs text-muted-foreground">
                     {t("minutes after the link")}
                   </span>
                 </div>
-                <p className="text-xs text-muted">
+                <p className="text-xs text-muted-foreground">
                   {followUpDelayMinutes > 0
                     ? t("Sent {minutes} min after they tap through.", { minutes: followUpDelayMinutes })
                     : t("Sent right after they tap through.")}
@@ -996,7 +996,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
       {/* Right: preview */}
       <div>
-        <p className="mb-4 text-sm text-muted">{t("Preview")}</p>
+        <p className="mb-4 text-sm text-muted-foreground">{t("Preview")}</p>
         <div className="flex min-w-0 justify-center lg:sticky lg:top-6 lg:block">
           <CampaignPreview
             tab={previewTab}

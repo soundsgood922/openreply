@@ -58,7 +58,7 @@ function formatDate(value: string, locale: string) {
 }
 
 function EmptyState({ label }: { label: string }) {
-  return <p className="py-5 text-center text-sm text-muted">{label}</p>;
+  return <p className="py-5 text-center text-sm text-muted-foreground">{label}</p>;
 }
 
 function Section({
@@ -128,7 +128,7 @@ export default function DiagnosticsPage() {
           <h1 className="text-2xl font-bold text-foreground">
             {t("Production Diagnostics")}
           </h1>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("Health, queues, webhook failures, billing events, and worker alerts.")}
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function DiagnosticsPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         <div className="panel rounded p-4 sm:p-5">
-          <p className="text-xs font-semibold uppercase text-muted">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">
             {t("Worker health")}
           </p>
           <p
@@ -152,7 +152,7 @@ export default function DiagnosticsPage() {
           >
             {data?.workerHealth.healthy ? t("Healthy") : t("Needs attention")}
           </p>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 text-xs text-muted-foreground">
             {workerAgeSeconds == null
               ? t("No heartbeat found")
               : t("Last heartbeat {seconds}s ago", { seconds: workerAgeSeconds })}
@@ -160,7 +160,7 @@ export default function DiagnosticsPage() {
         </div>
         {["waiting", "active", "delayed", "failed"].map((key) => (
           <div key={key} className="panel rounded p-4 sm:p-5">
-            <p className="text-xs font-semibold uppercase text-muted">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">
               {t("Queue")} {label(key)}
             </p>
             <p className="mt-3 text-2xl font-bold text-foreground">
@@ -186,7 +186,7 @@ export default function DiagnosticsPage() {
                     {alert.level}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-muted">
+                <p className="mt-2 text-xs text-muted-foreground">
                   {formatDate(alert.createdAt, locale)}
                   {alert.commentId ? ` · ${alert.commentId}` : ""}
                 </p>
@@ -210,7 +210,7 @@ export default function DiagnosticsPage() {
                     </p>
                     <StatusBadge status={item.status} />
                   </div>
-                  <p className="mt-1 truncate text-xs text-muted">
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
                     {item.commentText}
                   </p>
                   {item.errorMessage && (
@@ -235,7 +235,7 @@ export default function DiagnosticsPage() {
                   <p className="mt-1 text-xs text-error">
                     {event.errorMessage ?? t("Unknown error")}
                   </p>
-                  <p className="mt-1 text-xs text-muted">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {formatDate(event.createdAt, locale)}
                   </p>
                 </div>
@@ -256,7 +256,7 @@ export default function DiagnosticsPage() {
                   <p className="text-sm font-semibold text-foreground">
                     {event.message}
                   </p>
-                  <p className="mt-1 text-xs text-muted">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {formatDate(event.createdAt, locale)}
                   </p>
                 </div>
@@ -274,9 +274,9 @@ export default function DiagnosticsPage() {
           <div className="space-y-3">
             {data.operationalEvents.map((event) => (
               <div key={event.id} className="grid gap-2 border-b border-border pb-3 last:border-0 sm:grid-cols-[140px_1fr_auto]">
-                <p className="text-xs font-semibold text-muted">{event.source}</p>
+                <p className="text-xs font-semibold text-muted-foreground">{event.source}</p>
                 <p className="text-sm text-foreground">{event.message}</p>
-                <p className="text-xs text-muted">{formatDate(event.createdAt, locale)}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(event.createdAt, locale)}</p>
               </div>
             ))}
           </div>

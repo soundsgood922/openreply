@@ -139,7 +139,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-3 py-3 border-b border-border">
             <div>
               <p className="text-sm font-medium text-foreground">{t("Status")}</p>
-              <p className="text-xs text-muted mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {t("Comment webhooks and private replies depend on this connection.")}
               </p>
             </div>
@@ -157,18 +157,18 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-3 py-3 border-b border-border">
             <div>
               <p className="text-sm font-medium text-foreground">{t("Accounts")}</p>
-              <p className="text-xs text-muted mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 已連接 {accounts.length} 個帳號（IG 與 FB 粉專）
               </p>
             </div>
-            <span className="text-sm text-muted">
+            <span className="text-sm text-muted-foreground">
               {accounts.length > 0 ? t("{count} connected", { count: accounts.length }) : t("None")}
             </span>
           </div>
 
           <div className="space-y-3 py-3">
             {accounts.length === 0 && (
-              <p className="text-sm text-muted">
+              <p className="text-sm text-muted-foreground">
                 目前沒有已連接的帳號，新增帳號請聯絡系統管理員。
               </p>
             )}
@@ -181,7 +181,7 @@ export default function SettingsPage() {
                   <p className="text-sm font-semibold text-foreground">
                     {account.provider === "FACEBOOK" ? `FB 粉專 · ${account.username}` : `@${account.username}`}
                   </p>
-                  <p className="mt-1 text-xs text-muted">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {account.provider === "ZERNIO" ? t("Connected via Zernio") : account.provider === "FACEBOOK" || !account.tokenExpiresAt ? "粉專權杖（不會過期）" : <>{t("Token expires")}{" "}
                     {account.tokenExpiresAt
                       ? new Date(account.tokenExpiresAt).toLocaleDateString(locale)
@@ -216,9 +216,9 @@ export default function SettingsPage() {
                 <p className="truncate text-sm font-medium text-foreground">
                   {member.user.name ?? member.user.email ?? t("Unknown member")}
                 </p>
-                <p className="text-xs text-muted">{member.user.email}</p>
+                <p className="text-xs text-muted-foreground">{member.user.email}</p>
               </div>
-              <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted">
+              <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
                 {label(member.role)}
               </span>
             </div>
@@ -240,7 +240,7 @@ export default function SettingsPage() {
                     <p className="truncate text-sm font-medium text-foreground">
                       {invitation.email}
                     </p>
-                    <p className="truncate text-xs text-muted">
+                    <p className="truncate text-xs text-muted-foreground">
                       {label(invitation.role)} · {invitation.inviteUrl}
                     </p>
                   </div>
@@ -250,7 +250,7 @@ export default function SettingsPage() {
                       onClick={() =>
                         void navigator.clipboard?.writeText(invitation.inviteUrl)
                       }
-                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-border-hover hover:text-foreground"
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-border-hover hover:text-foreground"
                     >
                       {t("Copy")}
                     </button>
@@ -279,7 +279,7 @@ export default function SettingsPage() {
               value={inviteEmail}
               onChange={(event) => setInviteEmail(event.target.value)}
               placeholder="teammate@agency.com"
-              className="rounded border border-border bg-surface px-4 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent/40"
+              className="rounded border border-border bg-surface px-4 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary/40"
               required
             />
             <select
@@ -287,7 +287,7 @@ export default function SettingsPage() {
               onChange={(event) =>
                 setInviteRole(event.target.value as "ADMIN" | "MEMBER")
               }
-              className="rounded border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent/40"
+              className="rounded border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary/40"
             >
               <option value="MEMBER">{t("Member")}</option>
               <option value="ADMIN">{t("Admin")}</option>
@@ -295,7 +295,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={busy === "invite"}
-              className="rounded bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="rounded bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {busy === "invite" ? t("Inviting...") : t("Invite")}
             </button>
@@ -313,7 +313,7 @@ export default function SettingsPage() {
             <p className="text-sm font-medium text-foreground">
               {t("DMs sent this month")}
             </p>
-            <p className="text-xs text-muted mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               IG 與 FB 合計，含測試訊息。Meta 限制：每個帳號每小時最多 750 則；每則留言只能私訊一次，且須在留言後 7 天內。
             </p>
           </div>

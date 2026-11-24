@@ -76,14 +76,14 @@ export default function AccountSelect({
   label,
 }: AccountSelectProps) {
   return (
-    <label className="flex flex-col gap-2 text-sm">
-      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+    <label className="flex w-full flex-col gap-1.5 text-sm sm:w-auto">
+      <span className="text-xs font-medium text-muted-foreground">
         {label ?? "切換帳號平台"}
       </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-w-52 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent/40"
+        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/30 sm:min-w-52"
       >
         {includeAll && <option value="all">全部</option>}
         {[...accounts]
