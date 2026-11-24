@@ -127,6 +127,24 @@ export async function getAllUserMedia({
     : getUserMedia({ context, limit: max });
 }
 
+/**
+ * When a post was published, or null when the provider cannot say (Zernio).
+ * Used only to slow the polling sweep down on old posts.
+ */
+export async function getMediaPublishedAt({
+  context,
+  mediaId,
+}: {
+  context: InstagramContext;
+  mediaId: string;
+}): Promise<string | null> {
+  if (context.provider === "FACEBOOK")
+    return fb.getPostCreatedTime(context.accessToken, mediaId);
+  if (context.provider === "META")
+    return meta.getMediaTimestamp(context.accessToken, mediaId);
+  return null;
+}
+
 export async function getUserInfo({
   context,
 }: {

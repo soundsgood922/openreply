@@ -41,6 +41,8 @@ import {
 } from "@/lib/instagram/provider";
 import { matchKeywords } from "@/lib/utils/keyword-matcher";
 import { facebookPagesEnabled } from "@/lib/facebook/flag";
+import { getMediaPublishedAt } from "@/lib/instagram/provider";
+import { getCachedPublishedAt, shouldSweepCampaign } from "./sweep-schedule";
 
 // Only consider comments from the last few days — older ones are outside
 // Instagram's private-reply window anyway, so a DM to them would just fail.
@@ -58,6 +60,8 @@ interface SweepStat {
   alreadyReplied: number;
   enqueued: number;
   errors: string[];
+  // Old post not due this pass (see sweep-schedule).
+  deferred?: boolean;
 }
 
 function errMessage(error: unknown): string {
@@ -182,6 +186,16 @@ async function sweepCampaign({
   // matches any post.
   const mediaIds: string[] = [];
   if (automation.postId) {
+    // Posts past their first weeks are swept every half hour, not every pass.
+    const postId = automation.postId;
+    const context = accessToken;
+    const publishedAt = await getCachedPublishedAt(postId, () =>
+      getMediaPublishedAt({ context, mediaId: postId })
+    );
+    if (!(await shouldSweepCampaign(automation.id, publishedAt))) {
+      stat.deferred = true;
+      return stat;
+    }
     mediaIds.push(automation.postId);
     mediaIds.push(...(await adMediaFor(automation.postId)));
   } else if (automation.matchAnyPost) {

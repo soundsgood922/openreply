@@ -296,6 +296,20 @@ export async function getPagePosts(
   return results.slice(0, max);
 }
 
+/** When a Page post was published (ISO 8601), for scheduling the sweep. */
+export async function getPostCreatedTime(
+  accessToken: string,
+  postId: string
+): Promise<string | null> {
+  const url = new URL(`${graphBase()}/${postId}`);
+  url.searchParams.set("fields", "created_time");
+  url.searchParams.set("access_token", accessToken);
+  const post = await handleResponse<{ created_time?: string }>(
+    await fetch(url.toString())
+  );
+  return post.created_time ?? null;
+}
+
 /** The Page's name and picture, in the Instagram user shape. */
 export async function getPageInfo(
   accessToken: string,

@@ -723,6 +723,20 @@ const MEDIA_FIELDS =
 // Instagram caps a single media page at 100 items.
 const MEDIA_PAGE_SIZE = 100;
 
+/** When a media was published (ISO 8601), for scheduling the polling sweep. */
+export async function getMediaTimestamp(
+  accessToken: string,
+  mediaId: string
+): Promise<string | null> {
+  const url = new URL(`${instagramGraphBase()}/${mediaId}`);
+  url.searchParams.set("fields", "timestamp");
+  url.searchParams.set("access_token", accessToken);
+  const media = await handleResponse<{ timestamp?: string }>(
+    await fetch(url.toString())
+  );
+  return media.timestamp ?? null;
+}
+
 export async function getUserMedia(
   accessToken: string,
   limit = 25,

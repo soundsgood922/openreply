@@ -27,6 +27,8 @@ vi.mock("@/lib/instagram/provider", async (importOriginal) => ({
     accessToken: "local-test",
   }),
   getRecentMediaComments: readComments,
+  // Publish time unknown: swept as a new post, every pass.
+  getMediaPublishedAt: async () => null,
 }));
 
 vi.mock("@/lib/db/client", () => ({ prisma: mockPrisma }));
