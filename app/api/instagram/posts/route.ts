@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error("[Instagram Posts] Error:", err);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch Instagram posts" },
+      { success: false, error: "讀取貼文失敗，請稍後再試" },
       { status: 500 }
     );
   }

@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo } from "react";
 import { createI18n, type Locale } from "./index";
 
 // Shared components on the English marketing pages work without a provider.
-const I18nContext = createContext(createI18n("en"));
+const I18nContext = createContext(createI18n("zh-TW"));
 
 export function I18nProvider({
   locale,

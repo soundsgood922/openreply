@@ -1,6 +1,5 @@
 "use client";
 
-import LanguageSwitcher from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n/provider";
 import { useEffect, useState } from "react";
 import type { AccountOption } from "@/components/account-select";
@@ -132,11 +131,6 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      <section className="panel rounded p-4 sm:p-6 space-y-3">
-        <h2 className="text-base font-semibold">{t("Interface language")}</h2>
-        <LanguageSwitcher />
-        <p className="text-sm text-muted">{t("Saved in this browser. Campaign messages stay unchanged.")}</p>
-      </section>
 
       <section className="panel rounded p-4 sm:p-6">
         <h2 className="text-base font-semibold mb-6">帳號連線</h2>

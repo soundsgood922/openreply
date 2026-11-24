@@ -1,8 +1,6 @@
 import { cache } from "react";
-import { cookies } from "next/headers";
-import { createI18n, LOCALE_COOKIE, resolveLocale } from "./index";
+import { createI18n } from "./index";
 
-export const getI18n = cache(async () => {
-  const cookieStore = await cookies();
-  return createI18n(resolveLocale(cookieStore.get(LOCALE_COOKIE)?.value));
-});
+// This deployment is Traditional Chinese only; the language menu was removed,
+// so any locale cookie left in a browser is ignored.
+export const getI18n = cache(async () => createI18n("zh-TW"));

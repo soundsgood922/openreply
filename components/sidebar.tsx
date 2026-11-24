@@ -6,7 +6,6 @@
  * Text-only nav with active state and workspace section.
  */
 
-import LanguageSwitcher from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n/provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -115,7 +114,6 @@ export default function Sidebar({
         </nav>
 
         <div className="px-5 py-4 border-t border-border">
-          <div className="mb-4"><LanguageSwitcher /></div>
           <p className="text-sm text-foreground truncate">{workspaceName}</p>
           <p className="text-xs text-muted">{t("Self-hosted")}</p>
         </div>
