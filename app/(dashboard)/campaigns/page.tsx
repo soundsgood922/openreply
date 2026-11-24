@@ -475,6 +475,11 @@ export default function CampaignsPage() {
 
                 {/* Stats */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-xs text-zinc-500">
+                  {/* Funnel order: rate, then comment -> claim button -> link button. */}
+                  <span className="font-medium text-foreground">
+                    {auto.analytics.ctr}{t("% CTR")}
+                  </span>
+                  <span>·</span>
                   <span className="font-medium text-foreground">
                     {auto.analytics.runs} {t("runs")}
                   </span>
@@ -482,13 +487,13 @@ export default function CampaignsPage() {
                     <>
                       <span>·</span>
                       <span className="font-medium text-foreground">
-                        {auto.analytics.claims} 按鈕領取
+                        {auto.analytics.claims} 次領取按鈕
                       </span>
                     </>
                   )}
                   <span>·</span>
                   <span className="font-medium text-foreground">
-                    {auto.analytics.ctr}{t("% CTR")}
+                    {auto.analytics.clicks} 次連結按鈕
                   </span>
                   <span>·</span>
                   <span>{auto.analytics.sent} {t("sent")}</span>
@@ -496,8 +501,6 @@ export default function CampaignsPage() {
                   <span>{auto.analytics.skipped} {t("skipped")}</span>
                   <span>·</span>
                   <span>{auto.analytics.failed} {t("failed")}</span>
-                  <span>·</span>
-                  <span>{auto.analytics.clicks} {t("clicks")}</span>
                 </div>
 
                 {auto.analytics.topKeywords.length > 0 && (

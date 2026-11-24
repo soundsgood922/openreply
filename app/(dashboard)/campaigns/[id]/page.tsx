@@ -168,10 +168,10 @@ export default function CampaignDetailPage() {
   const metrics = [
     { label: "觸發", value: campaign.analytics.runs },
     ...(campaign.openingDmEnabled || campaign.analytics.claims > 0
-      ? [{ label: "按鈕領取", value: campaign.analytics.claims }]
+      ? [{ label: "領取按鈕", value: campaign.analytics.claims }]
       : []),
     { label: t("Sends"), value: campaign.analytics.sent },
-    { label: t("Clicks"), value: campaign.analytics.clicks },
+    { label: "連結按鈕", value: campaign.analytics.clicks },
     { label: t("CTR"), value: `${campaign.analytics.ctr}%` },
     { label: t("Failed"), value: campaign.analytics.failed },
   ];

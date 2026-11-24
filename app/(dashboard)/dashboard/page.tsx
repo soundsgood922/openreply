@@ -122,10 +122,10 @@ export default function DashboardPage() {
           value={stats?.activeAutomations ?? 0}
         />
         <StatCard label={t("DMs Sent")} value={stats?.dmsSentMonth ?? 0} />
-        <StatCard label="按鈕領取" value={stats?.buttonClaimsMonth ?? 0} />
+        <StatCard label="領取按鈕" value={stats?.buttonClaimsMonth ?? 0} />
         <StatCard label={t("Skipped")} value={stats?.dmsSkippedMonth ?? 0} />
         <StatCard label={t("Failed")} value={stats?.dmsFailedMonth ?? 0} />
-        <StatCard label={t("Clicks")} value={stats?.clicksThisMonth ?? 0} />
+        <StatCard label="連結按鈕" value={stats?.clicksThisMonth ?? 0} />
         <StatCard label={t("CTR")} value={`${stats?.ctrThisMonth ?? 0}%`} />
       </div>
 
