@@ -65,7 +65,7 @@ export default function TopBar({
       className={`sticky top-0 z-30 flex h-[calc(4rem+env(safe-area-inset-top))] items-center justify-between gap-3 border-b border-border bg-background/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur ${
         ownHeader
           ? "lg:hidden"
-          : "lg:static lg:mx-auto lg:h-auto lg:w-full lg:max-w-6xl lg:border-0 lg:bg-background lg:px-16 lg:pt-10 lg:pb-2 lg:backdrop-blur-none"
+          : "lg:static lg:h-auto lg:w-full lg:max-w-[1600px] lg:border-0 lg:bg-background lg:px-16 lg:pt-10 lg:pb-2 lg:backdrop-blur-none"
       }`}
     >
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">

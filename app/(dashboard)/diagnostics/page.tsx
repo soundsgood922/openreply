@@ -122,7 +122,7 @@ export default function DiagnosticsPage() {
       : Math.round(data.workerHealth.ageMs / 1000);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-foreground">

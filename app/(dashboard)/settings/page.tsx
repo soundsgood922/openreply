@@ -130,7 +130,7 @@ export default function SettingsPage() {
     membersData?.currentUserRole === "ADMIN";
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-3xl space-y-8">
 
       <section className="panel rounded p-4 sm:p-6">
         <h2 className="text-base font-semibold mb-6">帳號連線</h2>

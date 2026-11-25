@@ -44,7 +44,7 @@ export default async function AdminPage() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl space-y-6">
       <p className="text-sm text-muted-foreground">
         共 {workspaces.length} 個品牌。新增品牌或帳號請由管理者用腳本建立；成員在各品牌的「設定 → 團隊」邀請或移除。
       </p>
