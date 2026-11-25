@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+import { FacebookIcon, InstagramIcon } from "@/components/brand-icons";
+
 
 
 export interface AccountOption {
@@ -39,7 +42,7 @@ function optionLabel(account: AccountOption, accounts: AccountOption[]) {
   return shared ? `${PLATFORM_NAME[platform]} · ${account.username}` : PLATFORM_NAME[platform];
 }
 
-/** Coloured platform tag: blue for a Facebook Page, pink-purple for Instagram. */
+/** Platform chip from the designs: outlined, Facebook blue / Instagram pink. */
 export function PlatformTag({
   account,
 }: {
@@ -49,13 +52,12 @@ export function PlatformTag({
   return (
     <span
       title={accountLabel(account)}
-      className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${
-        facebook
-          ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-400/30 dark:bg-blue-500/15 dark:text-blue-300"
-          : "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 dark:border-fuchsia-400/30 dark:bg-fuchsia-500/15 dark:text-fuchsia-300"
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border bg-background px-2.5 py-1 text-sm font-medium ${
+        facebook ? "border-facebook/40 text-facebook" : "border-instagram/40 text-instagram"
       }`}
     >
-      {facebook ? "Facebook 粉絲專頁" : "Instagram"}
+      {facebook ? <FacebookIcon /> : <InstagramIcon />}
+      {facebook ? "Facebook" : "Instagram"}
     </span>
   );
 }
@@ -66,6 +68,9 @@ interface AccountSelectProps {
   onChange: (value: string) => void;
   includeAll?: boolean;
   label?: string;
+  // Label beside the menu (page headers) or above it (forms). Defaults to
+  // beside when the menu offers "all", i.e. when it is a page filter.
+  layout?: "inline" | "stacked";
 }
 
 export default function AccountSelect({
@@ -74,16 +79,23 @@ export default function AccountSelect({
   onChange,
   includeAll = true,
   label,
+  layout = includeAll ? "inline" : "stacked",
 }: AccountSelectProps) {
+  const inline = layout === "inline";
   return (
-    <label className="flex w-full flex-col gap-1.5 text-sm sm:w-auto">
-      <span className="text-xs font-medium text-muted-foreground">
+    <label
+      className={`flex w-full text-sm sm:w-auto ${
+        inline ? "items-center gap-3" : "flex-col gap-1.5"
+      }`}
+    >
+      <span className={`shrink-0 ${inline ? "text-sm text-secondary-foreground" : "text-xs font-medium text-muted-foreground"}`}>
         {label ?? "切換帳號平台"}
       </span>
+      <span className="relative w-full sm:w-auto">
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/30 sm:min-w-52"
+        className="h-10 w-full appearance-none rounded-lg border border-input bg-background pl-4 pr-10 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-3 focus:ring-ring/20 sm:min-w-64"
       >
         {includeAll && <option value="all">全部</option>}
         {[...accounts]
@@ -95,6 +107,8 @@ export default function AccountSelect({
           </option>
         ))}
       </select>
+      <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-secondary-foreground" />
+      </span>
     </label>
   );
 }

@@ -202,6 +202,13 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  // People a DM actually reached (distinct recipients of a sent message).
+  const reachedContacts = await prisma.dmLog.findMany({
+    where: { workspaceId, status: "SENT", ...accountFilter },
+    distinct: ["commenterId"],
+    select: { commenterId: true },
+  });
+
   const clicksThisMonth = countUniqueClicks(clickRowsThisMonth);
   const totalClicks = countUniqueClicks(allClickRows);
 
@@ -228,6 +235,7 @@ export async function GET(request: NextRequest) {
     data: {
       userName: firstName,
       contactsCount: contactRows.length,
+      reachedContactsCount: reachedContacts.length,
       workspace,
       instagramAccount,
       instagramAccounts,

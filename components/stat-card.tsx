@@ -3,9 +3,7 @@
 import { useI18n } from "@/lib/i18n/provider";
 
 /**
- * Stat Card
- *
- * Metric card with label, value, and optional trend.
+ * Stat Card (per the design): outlined card, label above a large number.
  */
 
 interface StatCardProps {
@@ -18,11 +16,9 @@ interface StatCardProps {
 export default function StatCard({ label, value, trend, trendUp }: StatCardProps) {
   const { t } = useI18n();
   return (
-    <div className="panel p-4">
-      <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">
-        {value}
-      </p>
+    <div className="rounded-xl border border-border bg-card px-6 py-5">
+      <p className="text-[15px] text-secondary-foreground">{label}</p>
+      <p className="mt-2 text-3xl font-bold tracking-tight text-foreground tabular-nums">{value}</p>
       {trend && (
         <p className={`mt-1 text-xs ${trendUp ? "text-success" : "text-error"}`}>
           {trendUp ? t("Up") : t("Down")} {trend}

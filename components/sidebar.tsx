@@ -1,19 +1,17 @@
 "use client";
 
 /**
- * Sidebar Navigation
+ * Sidebar Navigation (per the Figma design)
  *
- * Brand header (with the brand switch for people in several brands), the
- * page links, and the brand overview link for platform admins.
+ * Brand header with the brand switch, the day-to-day pages at the top, and
+ * account-level pages (settings, brand management, diagnostics) at the bottom.
  */
 
-import { useI18n } from "@/lib/i18n/provider";
-import type { StaticMessageKey } from "@/lib/i18n";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
-  ArrowLeftRight,
+  ArrowUpDown,
   Building2,
   LayoutDashboard,
   Megaphone,
@@ -23,12 +21,18 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems: { label: StaticMessageKey; href: string; icon: LucideIcon }[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Campaigns", href: "/campaigns", icon: Megaphone },
-  { label: "DM Logs", href: "/logs", icon: MessagesSquare },
-  { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Diagnostics", href: "/diagnostics", icon: Activity },
+type NavItem = { label: string; href: string; icon: LucideIcon; adminOnly?: boolean };
+
+const mainItems: NavItem[] = [
+  { label: "儀表板", href: "/dashboard", icon: LayoutDashboard },
+  { label: "自動回覆活動", href: "/campaigns", icon: Megaphone },
+  { label: "訊息發送紀錄", href: "/logs", icon: MessagesSquare },
+];
+
+const footerItems: NavItem[] = [
+  { label: "帳號設定", href: "/settings", icon: Settings },
+  { label: "品牌管理", href: "/admin", icon: Building2, adminOnly: true },
+  { label: "系統診斷", href: "/diagnostics", icon: Activity },
 ];
 
 interface SidebarProps {
@@ -40,32 +44,29 @@ interface SidebarProps {
 }
 
 function NavLink({
-  href,
-  icon: Icon,
+  item,
   active,
   onClick,
-  children,
 }: {
-  href: string;
-  icon: LucideIcon;
+  item: NavItem;
   active: boolean;
   onClick: () => void;
-  children: React.ReactNode;
 }) {
+  const Icon = item.icon;
   return (
     <Link
-      href={href}
+      href={item.href}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+        "flex items-center gap-3 rounded-xl px-4 py-3.5 text-[15px] transition-colors",
         active
-          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          ? "bg-sidebar-accent font-medium text-foreground"
+          : "text-secondary-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
       )}
     >
-      <Icon className={cn("size-4", active && "text-primary")} />
-      {children}
+      <Icon className={cn("size-5", active ? "text-primary" : "text-secondary-foreground")} strokeWidth={1.75} />
+      {item.label}
     </Link>
   );
 }
@@ -77,20 +78,18 @@ export default function Sidebar({
   canSwitchBrand,
   isPlatformAdmin,
 }: SidebarProps) {
-  const { t } = useI18n();
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const footer = footerItems.filter((item) => !item.adminOnly || isPlatformAdmin);
 
   return (
     <>
       {/* Mobile overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onClose} />
-      )}
+      {isOpen && <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={onClose} />}
 
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 flex h-dvh w-64 max-w-[85vw] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
+          "fixed top-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col bg-sidebar text-sidebar-foreground",
           "transition-transform duration-200 ease-out lg:static lg:z-auto lg:h-full lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -98,57 +97,40 @@ export default function Sidebar({
         {/* Same reason as the top bar: the drawer is full height, so the
             brand would otherwise land under the status bar. */}
         <div
-          className="flex items-center gap-3 border-b border-sidebar-border px-4 py-4"
-          style={{ paddingTop: "calc(1rem + env(safe-area-inset-top))" }}
+          className="flex items-center gap-3 px-6 pt-10 pb-8"
+          style={{ paddingTop: "calc(2.5rem + env(safe-area-inset-top))" }}
         >
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
             {workspaceName.slice(0, 1)}
           </div>
-          <div className="min-w-0">
-            <Link href="/dashboard" onClick={onClose} className="block truncate text-sm font-semibold">
-              {workspaceName}
-            </Link>
-            {canSwitchBrand ? (
-              <Link
-                href="/brands"
-                onClick={onClose}
-                className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-              >
-                <ArrowLeftRight className="size-3" />
-                切換品牌
-              </Link>
-            ) : (
-              <p className="mt-0.5 text-xs text-muted-foreground">留言自動回覆</p>
-            )}
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              active={isActive(item.href)}
+          <Link href="/dashboard" onClick={onClose} className="min-w-0 flex-1 truncate text-[17px] font-bold">
+            {workspaceName}
+          </Link>
+          {canSwitchBrand && (
+            <Link
+              href="/brands"
               onClick={onClose}
+              title="切換品牌"
+              aria-label="切換品牌"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary-foreground hover:bg-sidebar-accent hover:text-foreground"
             >
-              {t(item.label)}
-            </NavLink>
-          ))}
-
-          {isPlatformAdmin && (
-            <div className="mt-4 border-t border-sidebar-border pt-4">
-              <p className="px-3 pb-2 text-xs font-medium text-muted-foreground">管理</p>
-              <NavLink href="/admin" icon={Building2} active={isActive("/admin")} onClick={onClose}>
-                品牌管理
-              </NavLink>
-            </div>
+              <ArrowUpDown className="size-5" strokeWidth={1.75} />
+            </Link>
           )}
-        </nav>
-
-        <div className="border-t border-sidebar-border px-4 py-3">
-          <p className="text-xs text-muted-foreground">{t("Self-hosted")}</p>
         </div>
+
+        <nav className="flex flex-1 flex-col justify-between overflow-y-auto px-6 pb-8">
+          <div className="space-y-2">
+            {mainItems.map((item) => (
+              <NavLink key={item.href} item={item} active={isActive(item.href)} onClick={onClose} />
+            ))}
+          </div>
+          <div className="space-y-2 pt-8">
+            {footer.map((item) => (
+              <NavLink key={item.href} item={item} active={isActive(item.href)} onClick={onClose} />
+            ))}
+          </div>
+        </nav>
       </aside>
     </>
   );

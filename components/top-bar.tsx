@@ -11,6 +11,18 @@ import { useI18n } from "@/lib/i18n/provider";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 
+const OWN_HEADER_PAGES = new Set(["/dashboard", "/campaigns"]);
+
+// Pages titled in Chinese by the designs rather than through the catalog.
+const designTitles: Record<string, string> = {
+  "/dashboard": "儀表板",
+  "/campaigns": "自動回覆活動",
+  "/logs": "訊息發送紀錄",
+  "/settings": "帳號設定",
+  "/diagnostics": "系統診斷",
+  "/admin": "品牌管理",
+};
+
 const pageTitles: Record<string, StaticMessageKey> = {
   "/dashboard": "Dashboard",
   "/campaigns/import": "Import campaigns",
@@ -41,16 +53,20 @@ export default function TopBar({
       : pathname.startsWith("/campaigns/") ? "Campaign details" : "Dashboard"
   );
 
+  // These pages draw their own title row (title plus platform switch), so on
+  // a desktop the bar would only repeat it.
+  const ownHeader = OWN_HEADER_PAGES.has(pathname);
+
   return (
     <header
-      className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-4 backdrop-blur lg:px-8"
       // Installed to the home screen the app starts at the very top of the
-      // display, so without this the title sits under the clock and battery.
-      // The inset is 0 in a browser tab and on desktop.
-      style={{
-        height: "calc(4rem + env(safe-area-inset-top))",
-        paddingTop: "env(safe-area-inset-top)",
-      }}
+      // display, so without the inset the title sits under the clock and
+      // battery. The inset is 0 in a browser tab and on desktop.
+      className={`sticky top-0 z-30 flex h-[calc(4rem+env(safe-area-inset-top))] items-center justify-between gap-3 border-b border-border bg-background/95 px-4 pt-[env(safe-area-inset-top)] backdrop-blur ${
+        ownHeader
+          ? "lg:hidden"
+          : "lg:static lg:mx-auto lg:h-auto lg:w-full lg:max-w-6xl lg:border-0 lg:bg-background lg:px-16 lg:pt-10 lg:pb-2 lg:backdrop-blur-none"
+      }`}
     >
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <button
@@ -60,10 +76,10 @@ export default function TopBar({
         >
           <Menu className="size-4" />
         </button>
-        <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">{pathname.startsWith("/admin") ? "品牌管理" : t(title)}</h1>
+        <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg lg:text-2xl lg:font-bold">{designTitles[pathname] ?? t(title)}</h1>
       </div>
 
-      <span className="shrink-0 truncate rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">{brandName}</span>
+      <span className="shrink-0 truncate rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground lg:hidden">{brandName}</span>
     </header>
   );
 }

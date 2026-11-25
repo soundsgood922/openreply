@@ -109,11 +109,11 @@ export default function LogsPage() {
               key={status}
               onClick={() => handleFilterChange(status)}
               className={`
-                px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                rounded-lg px-4 py-2 text-sm transition-colors
                 ${
                   statusFilter === status
-                    ? "bg-primary/15 text-primary border border-primary/20"
-                    : "bg-surface text-muted-foreground border border-border hover:border-border-hover hover:text-foreground"
+                    ? "bg-segment font-medium text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }
               `}
             >
@@ -137,13 +137,13 @@ export default function LogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
-              <tr className="border-b border-border text-left">
-                <th className="px-4 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:px-6">{t("Commenter")}</th>
-                <th className="px-4 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:px-6">{t("Comment")}</th>
-                <th className="px-4 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:px-6">{t("Campaign")}</th>
-                <th className="px-4 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:px-6">{t("Account")}</th>
-                <th className="px-4 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:px-6">{t("Status")}</th>
-                <th className="px-4 py-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider sm:px-6">{t("Time")}</th>
+              <tr className="bg-secondary text-left">
+                <th className="px-4 py-3.5 text-sm font-normal text-secondary-foreground sm:px-6">{t("Commenter")}</th>
+                <th className="px-4 py-3.5 text-sm font-normal text-secondary-foreground sm:px-6">{t("Comment")}</th>
+                <th className="px-4 py-3.5 text-sm font-normal text-secondary-foreground sm:px-6">{t("Campaign")}</th>
+                <th className="px-4 py-3.5 text-sm font-normal text-secondary-foreground sm:px-6">{t("Account")}</th>
+                <th className="px-4 py-3.5 text-sm font-normal text-secondary-foreground sm:px-6">{t("Status")}</th>
+                <th className="px-4 py-3.5 text-sm font-normal text-secondary-foreground sm:px-6">{t("Time")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

@@ -49,6 +49,10 @@
 
   /* App additions. */
   --color-surface: var(--sidebar);
+  --color-canvas: var(--sidebar);
+  --color-segment: var(--segment);
+  --color-facebook: #1877f2;
+  --color-instagram: #e1306c;
   --color-surface-hover: var(--muted);
   --color-border-hover: oklch(0.87 0 0);
   --color-success: oklch(0.627 0.17 149.2);
@@ -65,39 +69,44 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* Brand orange (#f97316). */
-  --primary: oklch(0.705 0.213 47.604);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.705 0.213 47.604);
-  --chart-1: oklch(0.705 0.213 47.604);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.705 0.213 47.604);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.955 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.705 0.213 47.604);
+  /* Colours taken from the Figma designs (2026-11-25). */
+  --background: #ffffff;
+  --foreground: #2d2d2d;
+  --card: #ffffff;
+  --card-foreground: #2d2d2d;
+  --popover: #ffffff;
+  --popover-foreground: #2d2d2d;
+  /* Brand orange. */
+  --primary: #ff6900;
+  --primary-foreground: #ffffff;
+  /* Grey fills: secondary buttons, inputs, table header bar. */
+  --secondary: #f1f1f1;
+  --secondary-foreground: #4a4a4a;
+  --muted: #f1f1f1;
+  --muted-foreground: #8a8a8a;
+  --accent: #f1f1f1;
+  --accent-foreground: #2d2d2d;
+  --destructive: #e5484d;
+  --border: #dadada;
+  --input: #dadada;
+  --ring: #ff6900;
+  --chart-1: #ff6900;
+  --chart-2: #ff9b55;
+  --chart-3: #8a8a8a;
+  --chart-4: #dadada;
+  --chart-5: #2d2d2d;
+  --radius: 0.75rem;
+  /* Warm off-white: sidebar and the sign-in / brand-picker canvas. */
+  --sidebar: #f3f4ef;
+  --sidebar-foreground: #2d2d2d;
+  --sidebar-primary: #ff6900;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff;
+  --sidebar-accent-foreground: #2d2d2d;
+  --sidebar-border: #e6e6e0;
+  --sidebar-ring: #ff6900;
+  /* Segmented control's selected pill. */
+  --segment: #6e6869;
 }
 
 @layer base {
@@ -144,7 +153,6 @@ select:focus-visible {
   color: var(--card-foreground);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 @media (prefers-reduced-motion: reduce) {
