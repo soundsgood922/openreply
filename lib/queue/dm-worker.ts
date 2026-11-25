@@ -179,10 +179,17 @@ function buildInlineLinkFallback(
       trackedLinks,
       recipientToken,
     }) || bodyText;
+  // The builder no longer asks for a {link} placeholder (the link rides on a
+  // button), so a message without one still has to carry the first link here.
+  const primaryUrl = trackedLinks[0]
+    ? buildTrackedUrl(trackedLinks[0].slug, undefined, recipientToken)
+    : null;
+  const withPrimary =
+    primaryUrl && !base.includes(primaryUrl) ? `${base}\n${primaryUrl}` : base;
   const extraUrls = trackedLinks
     .slice(1)
     .map((link) => buildTrackedUrl(link.slug, undefined, recipientToken));
-  return extraUrls.length > 0 ? `${base}\n${extraUrls.join("\n")}` : base;
+  return extraUrls.length > 0 ? `${withPrimary}\n${extraUrls.join("\n")}` : withPrimary;
 }
 
 type RevealAutomation = {

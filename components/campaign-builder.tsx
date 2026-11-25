@@ -1,33 +1,38 @@
 "use client";
 
 /**
- * Campaign Builder
+ * Campaign Builder (per the Figma designs, 2026-11)
  *
- * Two-pane campaign editor: a control panel on the left and a live phone
- * preview on the right. Used for both creating and editing a campaign.
+ * The left column is split into three steps — 貼文 / 留言 / 私訊 — that also
+ * switch the phone preview on the right. Used for both creating and editing.
  *
- * Turn 1 wires the fully-functional pieces: trigger scope (specific / any /
- * next post), match mode (specific words / any word), the opening + reveal DM
- * text, public reply, and the tracked link. Button-driven delivery and the
- * follow / email / follow-up steps arrive in later turns.
+ * Delivery is one of two modes:
+ * - 直接傳送 1 則訊息: the comment gets the link DM straight away;
+ * - 兩段式訊息 (Instagram only): the first DM asks for a follow with a button;
+ *   a tap is checked against Instagram and only a follower gets the link.
+ *   Stored as requireFollow with the first DM as the follow prompt (the old
+ *   separate "opening DM" is no longer offered). Facebook cannot tell who
+ *   follows a Page, so a Page campaign is always one message.
  */
 
 import { useI18n } from "@/lib/i18n/provider";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import AccountSelect, { type AccountOption } from "@/components/account-select";
+import { Plus, X } from "lucide-react";
+import { type AccountOption } from "@/components/account-select";
 import PostPicker from "@/components/post-picker";
 import CampaignPreview, { type PreviewTab } from "@/components/campaign-preview";
 import { readCache, writeCache } from "@/lib/client-cache";
 import { DEFAULT_FOLLOW_PROMPT_BUTTON, DEFAULT_FOLLOW_PROMPT_MESSAGE } from "@/lib/automation/follow-prompt";
-import {
-  IMPORT_QUEUE_KEY,
-  IMPORT_ACCOUNT_KEY,
-  type ImportRow,
-} from "@/lib/import-queue";
+import { IMPORT_QUEUE_KEY, IMPORT_ACCOUNT_KEY, type ImportRow } from "@/lib/import-queue";
 
 type TriggerScope = "specific" | "any" | "next";
 type MatchMode = "specific" | "any";
+type DmMode = "one" | "two";
+type Step = "post" | "comment" | "dm";
+
+const MAX_REPLIES = 3;
+const MAX_LINKS = 2;
 
 interface LoadedCampaign {
   id: string;
@@ -39,7 +44,6 @@ interface LoadedCampaign {
   keywords: string[];
   matchAnyWord: boolean;
   wholeWordMatch?: boolean;
-  dmTriggerEnabled: boolean;
   dmMessage: string;
   openingDmEnabled: boolean;
   openingDmMessage: string | null;
@@ -64,73 +68,97 @@ interface CampaignBuilderProps {
   campaignId?: string;
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      {children}
-    </div>
-  );
+/* ----------------------------- small parts ----------------------------- */
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <p className="mb-3 text-[15px] text-secondary-foreground">{children}</p>;
 }
 
-function Radio({
-  checked,
+function Note({ children }: { children: React.ReactNode }) {
+  return <p className="mt-2 px-4 text-xs text-secondary-foreground">※ {children}</p>;
+}
+
+/** An option card: orange outline and text when chosen. */
+function Choice({
+  selected,
   onSelect,
+  disabled,
   children,
 }: {
-  checked: boolean;
+  selected: boolean;
   onSelect: () => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
-        checked ? "border-primary bg-primary/5" : "border-border hover:border-border-hover"
+      disabled={disabled}
+      aria-pressed={selected}
+      className={`flex h-11 w-full items-center rounded-xl border bg-background px-4 text-left text-[15px] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+        selected
+          ? "border-primary font-medium text-primary"
+          : "border-border text-muted-foreground hover:border-border-hover"
       }`}
     >
-      <span
-        className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-          checked ? "border-primary" : "border-zinc-500"
-        }`}
-      >
-        {checked && <span className="h-2 w-2 rounded-full bg-primary" />}
-      </span>
-      <span className="flex-1 text-foreground">{children}</span>
+      {children}
     </button>
   );
 }
 
-function Toggle({
+/** A switch inside an outlined row, as in the designs. */
+function ToggleCard({
   on,
   onToggle,
+  children,
 }: {
   on: boolean;
   onToggle: () => void;
+  children: React.ReactNode;
 }) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={on}
       onClick={onToggle}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-        on ? "bg-primary" : "bg-zinc-300"
+      className={`flex h-11 w-full items-center gap-4 rounded-xl border bg-background px-4 text-left text-[15px] transition-colors ${
+        on ? "border-primary font-medium text-primary" : "border-border text-muted-foreground"
       }`}
     >
-      <span
-        className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
-          on ? "left-6" : "left-1"
-        }`}
-      />
+      <span className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${on ? "bg-primary" : "bg-border"}`}>
+        <span
+          className={`absolute top-0.5 size-3 rounded-full bg-white transition-all ${on ? "left-[18px]" : "left-0.5"}`}
+        />
+      </span>
+      {children}
     </button>
   );
 }
+
+const filledInput =
+  "h-11 w-full rounded-xl bg-secondary px-4 text-[15px] text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 focus:outline-none";
+const filledArea =
+  "w-full resize-none rounded-xl bg-secondary px-4 py-3 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 focus:outline-none";
+const addButton =
+  "flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background text-[15px] text-secondary-foreground hover:bg-muted";
+
+function platformName(account: AccountOption, all: AccountOption[]) {
+  const facebook = account.provider === "FACEBOOK";
+  const base = facebook ? "Facebook 粉絲專頁" : "Instagram 帳號";
+  const shared = all.filter((a) => (a.provider === "FACEBOOK") === facebook).length > 1;
+  return shared ? `${base} · ${account.username}` : base;
+}
+
+function splitKeywords(text: string) {
+  return text
+    .split(/[,，、]/)
+    .map((k) => k.trim())
+    .filter(Boolean);
+}
+
+/* ----------------------------- builder ----------------------------- */
 
 export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderProps) {
   const { t } = useI18n();
@@ -140,81 +168,104 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>("post");
 
   const [name, setName] = useState("");
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState("");
-
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [isActive, setIsActive] = useState(true);
+  const [isActive, setIsActive] = useState(false);
 
   const [triggerScope, setTriggerScope] = useState<TriggerScope>("specific");
   const [postId, setPostId] = useState<string | null>(null);
   const [postUrl, setPostUrl] = useState<string | null>(null);
   const [postThumb, setPostThumb] = useState<string | null>(null);
   const [postCaption, setPostCaption] = useState("");
-
-  // Post IDs already tied to another automation on this account, so the picker
-  // can flag them and the user knows not to double-assign. Maps postId ->
-  // the campaign name using it (for the tooltip).
+  // postId -> campaign already using it, flagged 已設活動 in the picker.
   const [usedPosts, setUsedPosts] = useState<Record<string, string>>({});
 
   const [matchMode, setMatchMode] = useState<MatchMode>("specific");
   const [keywordText, setKeywordText] = useState("");
-  const [wholeWordMatch, setWholeWordMatch] = useState(true);
-  const [dmTriggerEnabled, setDmTriggerEnabled] = useState(false);
+  // Off = the comment only has to contain a keyword (the default for Chinese).
+  const [wholeWordMatch, setWholeWordMatch] = useState(false);
 
   const [publicReplyEnabled, setPublicReplyEnabled] = useState(false);
   const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>([""]);
 
-  const [openingDmEnabled, setOpeningDmEnabled] = useState(false);
-  const [openingDmMessage, setOpeningDmMessage] = useState("");
-  const [openingDmButtonLabel, setOpeningDmButtonLabel] = useState("");
-
+  const [dmMode, setDmMode] = useState<DmMode>("one");
+  const [openingText, setOpeningText] = useState("");
+  const [openingButton, setOpeningButton] = useState("");
   const [dmMessage, setDmMessage] = useState("");
-  const [linkOpen, setLinkOpen] = useState(false);
-  const [trackedDestinationUrl, setTrackedDestinationUrl] = useState("");
-  const [linkButtonLabel, setLinkButtonLabel] = useState("Open link");
-  const [secondLinkOpen, setSecondLinkOpen] = useState(false);
-  const [secondaryDestinationUrl, setSecondaryDestinationUrl] = useState("");
-  const [secondaryButtonLabel, setSecondaryButtonLabel] = useState("Open link");
-  const [requireFollow, setRequireFollow] = useState(false);
-  const [followPromptMessage, setFollowPromptMessage] = useState("");
-  const [followPromptButtonLabel, setFollowPromptButtonLabel] =
-    useState(DEFAULT_FOLLOW_PROMPT_BUTTON);
-  const [followUpEnabled, setFollowUpEnabled] = useState(false);
-  const [followUpMessage, setFollowUpMessage] = useState("");
-  const [followUpDelayMinutes, setFollowUpDelayMinutes] = useState(0);
+  const [links, setLinks] = useState<{ url: string; label: string }[]>([]);
 
-  const [previewTab, setPreviewTab] = useState<PreviewTab>("dm");
+  // Kept as loaded so a save does not drop them; no longer edited here.
+  const [followUp, setFollowUp] = useState({ enabled: false, message: "", delay: 0 });
 
-  // CSV import queue. When present, each save advances to the next row instead
-  // of returning to the campaigns list.
+  // CSV import queue. When present, each save advances to the next row.
   const [importQueue, setImportQueue] = useState<ImportRow[] | null>(null);
   const [importTotal, setImportTotal] = useState(0);
 
-  const keywords = useMemo(
-    () =>
-      keywordText
-        .split(",")
-        .map((k) => k.trim())
-        .filter(Boolean),
-    [keywordText]
-  );
+  const keywords = useMemo(() => splitKeywords(keywordText), [keywordText]);
+  const account = accounts.find((a) => a.id === selectedAccountId);
+  const isFacebook = account?.provider === "FACEBOOK";
+  const username = account?.username ?? "yourbrand";
+  // A Facebook Page cannot check follows, so it is always one message.
+  const effectiveDmMode: DmMode = isFacebook ? "one" : dmMode;
 
-  // Fetch the connected account's real avatar for the preview (cache-first so
-  // it shows instantly on a return visit instead of a blank circle).
+  /* -------- unsaved-changes guard -------- */
+  const snapshot = JSON.stringify({
+    name, selectedAccountId, triggerScope, postId, matchMode, keywordText, wholeWordMatch,
+    publicReplyEnabled, publicReplyMessages, dmMode, openingText, openingButton, dmMessage, links,
+  });
+  const [baseline, setBaseline] = useState<string | null>(null);
+  const leaving = useRef(false);
+  useEffect(() => {
+    // The first settled state (after an edit loads, or the accounts arrive) is
+    // what "unchanged" means.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (baseline === null && !loading && accounts.length > 0) setBaseline(snapshot);
+  }, [baseline, loading, accounts.length, snapshot]);
+  const dirty = baseline !== null && baseline !== snapshot;
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = "尚未儲存的變更將會遺失，確定要離開嗎？";
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (leaving.current) return;
+      e.preventDefault();
+    };
+    // In-app links do not fire beforeunload, so catch their clicks.
+    const onClick = (e: MouseEvent) => {
+      if (leaving.current || e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const anchor = (e.target as HTMLElement | null)?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank") return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return;
+      if (!window.confirm(warn)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    document.addEventListener("click", onClick, true);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, [dirty]);
+
+  /* -------- data -------- */
+
+  // The connected account's avatar for the preview (cache-first).
   useEffect(() => {
     if (!selectedAccountId) return;
     let cancelled = false;
     const cacheKey = `ig-avatar:${selectedAccountId}`;
     const cached = readCache<string | null>(cacheKey, 30 * 60 * 1000);
-    // Hydrating state from cache is a legitimate effect use here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (cached.data !== null) setAvatarUrl(cached.data);
-
-    const params = new URLSearchParams({ instagramAccountId: selectedAccountId });
-    fetch(`/api/instagram/profile?${params}`)
+    fetch(`/api/instagram/profile?${new URLSearchParams({ instagramAccountId: selectedAccountId })}`)
       .then((r) => r.json())
       .then((d) => {
         if (cancelled) return;
@@ -230,7 +281,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     };
   }, [selectedAccountId]);
 
-  // Load accounts (both modes need them for the preview username + selector).
   useEffect(() => {
     fetch("/api/dashboard/stats")
       .then((r) => r.json())
@@ -238,9 +288,9 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         if (!payload.success) return;
         const next: AccountOption[] = payload.data.instagramAccounts ?? [];
         setAccounts(next);
-        setSelectedAccountId(
-          (prev) => prev || payload.data.selectedInstagramAccountId || next[0]?.id || ""
-        );
+        // Instagram first, as the design lists it.
+        const preferred = next.find((a) => a.provider !== "FACEBOOK") ?? next[0];
+        setSelectedAccountId((prev) => prev || preferred?.id || "");
       })
       .catch(() => setAccounts([]));
   }, []);
@@ -256,52 +306,44 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         if (!c) return setNotFound(true);
         setName(c.name);
         setSelectedAccountId(c.instagramAccountId);
-        setTriggerScope(
-          c.matchAnyPost ? "any" : c.pendingNextReel ? "next" : "specific"
-        );
+        setTriggerScope(c.matchAnyPost ? "any" : c.pendingNextReel ? "next" : "specific");
         setPostId(c.postId);
         setPostUrl(c.postUrl);
         setMatchMode(c.matchAnyWord ? "any" : "specific");
         setKeywordText(c.keywords.join(", "));
         setWholeWordMatch(c.wholeWordMatch ?? true);
-        setDmTriggerEnabled(c.dmTriggerEnabled ?? false);
         setPublicReplyEnabled(c.publicReplyEnabled);
         setPublicReplyMessages(
           c.publicReplyMessages?.length
-            ? c.publicReplyMessages
+            ? c.publicReplyMessages.slice(0, MAX_REPLIES)
             : c.publicReplyMessage
               ? [c.publicReplyMessage]
               : [""]
         );
-        setOpeningDmEnabled(c.openingDmEnabled);
-        setOpeningDmMessage(c.openingDmMessage ?? "");
-        setOpeningDmButtonLabel(c.openingDmButtonLabel ?? "");
+        // Older campaigns may use the retired opening DM; a follow gate or an
+        // opening DM both read as 兩段式 now (Facebook falls back to one).
+        setDmMode(c.requireFollow || c.openingDmEnabled ? "two" : "one");
+        setOpeningText(c.followPromptMessage || c.openingDmMessage || "");
+        setOpeningButton(c.followPromptButtonLabel || c.openingDmButtonLabel || "");
         setDmMessage(c.dmMessage);
-        setLinkButtonLabel(c.linkButtonLabel ?? "Open link");
-        setIsActive(c.isActive);
-        const link = c.trackedLinks?.[0]?.destinationUrl ?? "";
-        setTrackedDestinationUrl(link);
-        setLinkOpen(Boolean(link));
-        const secondLink = c.trackedLinks?.[1];
-        setSecondaryDestinationUrl(secondLink?.destinationUrl ?? "");
-        setSecondaryButtonLabel(secondLink?.label ?? "Open link");
-        setSecondLinkOpen(Boolean(secondLink?.destinationUrl));
-        setRequireFollow(c.requireFollow ?? false);
-        setFollowPromptMessage(c.followPromptMessage ?? "");
-        setFollowPromptButtonLabel(
-          c.followPromptButtonLabel ?? DEFAULT_FOLLOW_PROMPT_BUTTON
+        setLinks(
+          (c.trackedLinks ?? []).slice(0, MAX_LINKS).map((l, i) => ({
+            url: l.destinationUrl,
+            label: (i === 0 ? c.linkButtonLabel : l.label) ?? "",
+          }))
         );
-        setFollowUpEnabled(c.followUpEnabled ?? false);
-        setFollowUpMessage(c.followUpMessage ?? "");
-        setFollowUpDelayMinutes(c.followUpDelayMinutes ?? 0);
+        setFollowUp({
+          enabled: c.followUpEnabled ?? false,
+          message: c.followUpMessage ?? "",
+          delay: c.followUpDelayMinutes ?? 0,
+        });
+        setIsActive(c.isActive);
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [mode, campaignId]);
 
-  // Track which posts on the selected account are already assigned to an
-  // automation, so the picker can highlight them. The campaign being edited is
-  // excluded — its own post should read as selected, not "taken".
+  // Posts on the selected account already used by another campaign.
   useEffect(() => {
     if (!selectedAccountId) return;
     let cancelled = false;
@@ -311,8 +353,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         if (cancelled || !payload.success) return;
         const map: Record<string, string> = {};
         for (const a of payload.data as LoadedCampaign[]) {
-          if (!a.postId) continue;
-          if (a.instagramAccountId !== selectedAccountId) continue;
+          if (!a.postId || a.instagramAccountId !== selectedAccountId) continue;
           if (mode === "edit" && a.id === campaignId) continue;
           map[a.postId] = a.name;
         }
@@ -324,8 +365,6 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     };
   }, [selectedAccountId, mode, campaignId]);
 
-  // Prefill the editable fields from one queued import row. The reel is left
-  // unset so the user picks it per row.
   function prefillFromRow(row: ImportRow) {
     setName(row.name ?? "");
     setTriggerScope("specific");
@@ -338,19 +377,12 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     setDmMessage(row.dmMessage ?? "");
     setPublicReplyEnabled(Boolean(row.publicReply));
     setPublicReplyMessages(row.publicReply ? [row.publicReply] : [""]);
-    const hasOpening = Boolean(row.openingDmMessage);
-    setOpeningDmEnabled(hasOpening);
-    setOpeningDmMessage(row.openingDmMessage ?? "");
-    setOpeningDmButtonLabel(
-      row.openingDmButtonLabel || (hasOpening ? "Send link" : "")
-    );
-    const link = row.trackedUrl ?? "";
-    setTrackedDestinationUrl(link);
-    setLinkOpen(Boolean(link));
+    setDmMode("one");
+    setLinks(row.trackedUrl ? [{ url: row.trackedUrl, label: "" }] : []);
     setError(null);
+    setStep("post");
   }
 
-  // Pick up a staged CSV import (new mode only) and prefill the first row.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (mode !== "new") return;
@@ -370,39 +402,35 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   }, [mode]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const username =
-    accounts.find((a) => a.id === selectedAccountId)?.username ?? "yourbrand";
-
-  function handlePostSelect(
-    id: string,
-    url?: string,
-    thumb?: string,
-    caption?: string
-  ) {
-    setPostId(id);
-    setPostUrl(url ?? null);
-    setPostThumb(thumb ?? null);
-    setPostCaption(caption ?? "");
+  function selectAccount(id: string) {
+    setSelectedAccountId(id);
+    setPostId(null);
+    setPostUrl(null);
+    setPostThumb(null);
+    setPostCaption("");
+    const next = accounts.find((a) => a.id === id);
+    if (next?.provider === "FACEBOOK" && triggerScope === "next") setTriggerScope("specific");
   }
 
-  function ensureLinkToken() {
-    setDmMessage((cur) => (cur.includes("{link}") ? cur : `${cur.trim()} {link}`.trim()));
+  function fail(message: string, at: Step) {
+    setError(message);
+    setStep(at);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleSubmit(activeValue: boolean) {
     setError(null);
 
-    if (!selectedAccountId) return setError(t("Connect an Instagram account first."));
-    if (triggerScope === "specific" && !postId)
-      return setError(t("Pick a post or reel to trigger the campaign."));
+    if (!selectedAccountId) return fail("請先連接帳號。", "post");
+    if (triggerScope === "specific" && !postId) return fail("請選擇一篇貼文／Reel。", "post");
     if (matchMode === "specific" && keywords.length === 0)
-      return setError(t("Add at least one keyword, or switch to any word."));
-    if (!dmMessage.trim()) return setError(t("Add the DM with the link."));
-    if (openingDmEnabled && (!openingDmMessage.trim() || !openingDmButtonLabel.trim()))
-      return setError(t("Your opening DM needs a message and a button label."));
+      return fail("請輸入至少一個留言關鍵字，或改選「任何留言文字」。", "comment");
+    if (!dmMessage.trim()) return fail("請輸入私訊的訊息內容。", "dm");
+    if (links.some((l) => !l.url.trim())) return fail("請填寫連結網址，或移除空白的連結按鈕。", "dm");
 
     setSaving(true);
-
+    const twoStep = effectiveDmMode === "two";
+    const [first, second] = links;
     const payload = {
       name: name.trim() || `Campaign for @${username}`,
       instagramAccountId: selectedAccountId,
@@ -413,27 +441,27 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       matchAnyWord: matchMode === "any",
       keywords: matchMode === "any" ? [] : keywords,
       wholeWordMatch,
-      dmTriggerEnabled,
+      dmTriggerEnabled: false,
       dmMessage,
-      openingDmEnabled,
-      openingDmMessage: openingDmEnabled ? openingDmMessage : null,
-      openingDmButtonLabel: openingDmEnabled ? openingDmButtonLabel : null,
+      // The two-step flow is the follow gate with its own first message; the
+      // separate opening DM is retired.
+      openingDmEnabled: false,
+      openingDmMessage: null,
+      openingDmButtonLabel: null,
+      requireFollow: twoStep,
+      followPromptMessage: twoStep ? openingText.trim() : "",
+      followPromptButtonLabel: twoStep ? openingButton.trim() || DEFAULT_FOLLOW_PROMPT_BUTTON : "",
       publicReplyEnabled,
       publicReplyMessages: publicReplyEnabled
-        ? publicReplyMessages.map((m) => m.trim()).filter(Boolean)
+        ? publicReplyMessages.map((m) => m.trim()).filter(Boolean).slice(0, MAX_REPLIES)
         : [],
-      trackedDestinationUrl: trackedDestinationUrl.trim() || "",
-      linkButtonLabel: linkButtonLabel.trim() || "Open link",
-      secondaryDestinationUrl: secondaryDestinationUrl.trim() || "",
-      secondaryButtonLabel: secondaryButtonLabel.trim() || "Open link",
-      requireFollow,
-      followPromptMessage: requireFollow ? followPromptMessage.trim() : "",
-      followPromptButtonLabel: requireFollow
-        ? followPromptButtonLabel.trim() || DEFAULT_FOLLOW_PROMPT_BUTTON
-        : "",
-      followUpEnabled,
-      followUpMessage: followUpEnabled ? followUpMessage.trim() : "",
-      followUpDelayMinutes: followUpEnabled ? followUpDelayMinutes : 0,
+      trackedDestinationUrl: first?.url.trim() ?? "",
+      linkButtonLabel: first?.label.trim() || "開啟連結",
+      secondaryDestinationUrl: second?.url.trim() ?? "",
+      secondaryButtonLabel: second?.label.trim() || "開啟連結",
+      followUpEnabled: followUp.enabled,
+      followUpMessage: followUp.enabled ? followUp.message.trim() : "",
+      followUpDelayMinutes: followUp.enabled ? followUp.delay : 0,
       isActive: activeValue,
     };
 
@@ -452,29 +480,22 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             });
       const data = await res.json();
       if (data.success) {
-        // The post we just assigned is now in use. Reflect it immediately so
-        // the picker flags it on the next imported row — the fetch that builds
-        // this map doesn't re-run while the builder stays mounted through the
-        // import queue.
         if (triggerScope === "specific" && postId) {
-          const assignedPostId = postId;
-          setUsedPosts((prev) => ({ ...prev, [assignedPostId]: payload.name }));
+          const assigned = postId;
+          setUsedPosts((prev) => ({ ...prev, [assigned]: payload.name }));
         }
-        // Importing: advance to the next queued row instead of leaving.
         if (importQueue && importQueue.length > 1) {
           const remaining = importQueue.slice(1);
           try {
-            window.localStorage.setItem(
-              IMPORT_QUEUE_KEY,
-              JSON.stringify(remaining)
-            );
+            window.localStorage.setItem(IMPORT_QUEUE_KEY, JSON.stringify(remaining));
           } catch {
             // ignore
           }
           setImportQueue(remaining);
           prefillFromRow(remaining[0]);
+          setBaseline(null);
           setSaving(false);
-          if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+          window.scrollTo({ top: 0 });
           return;
         }
         if (importQueue) {
@@ -485,34 +506,24 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             // ignore
           }
         }
-        // refresh() busts the router cache so the list reflects the save
-        // instead of landing on a stale (empty) campaigns page.
+        leaving.current = true;
         router.push("/campaigns");
         router.refresh();
       } else {
-        // Surface the specific field that failed validation instead of a
-        // generic "Invalid input".
-        const fieldErrors = data.details?.fieldErrors as
-          | Record<string, string[]>
-          | undefined;
+        const fieldErrors = data.details?.fieldErrors as Record<string, string[]> | undefined;
         const firstField = fieldErrors && Object.keys(fieldErrors)[0];
         setError(
-          firstField
-            ? `${firstField}: ${fieldErrors[firstField][0]}`
-            : data.error ?? t("Failed to save campaign")
+          firstField ? `${firstField}: ${fieldErrors[firstField][0]}` : data.error ?? "儲存失敗，請再試一次。"
         );
-        if (typeof window !== "undefined")
-          window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch {
-      setError(t("Failed to save campaign"));
+      setError("儲存失敗，請再試一次。");
     } finally {
       setSaving(false);
     }
   }
 
-  // Skip the current imported row without saving a campaign for it, advancing
-  // to the next one (or finishing the import if it was the last).
   function skipRow() {
     if (!importQueue) return;
     setError(null);
@@ -525,31 +536,30 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       }
       setImportQueue(remaining);
       prefillFromRow(remaining[0]);
-      if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+      setBaseline(null);
+      window.scrollTo({ top: 0 });
       return;
     }
-    // Last row skipped — finish the import.
     try {
       window.localStorage.removeItem(IMPORT_QUEUE_KEY);
       window.localStorage.removeItem(IMPORT_ACCOUNT_KEY);
     } catch {
       // ignore
     }
+    leaving.current = true;
     router.push("/campaigns");
     router.refresh();
   }
 
-  if (loading) {
-    return <div className="panel h-64 rounded" />;
-  }
+  if (loading) return <div className="h-64 animate-pulse rounded-xl bg-muted" />;
 
   if (notFound) {
     return (
-      <div className="panel rounded p-8 text-center">
+      <div className="rounded-xl border border-border p-8 text-center">
         <p className="text-sm text-muted-foreground">{t("Campaign not found.")}</p>
         <button
           onClick={() => router.push("/campaigns")}
-          className="mt-4 rounded border border-border px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mt-4 rounded-xl border border-border px-4 py-2 text-sm text-secondary-foreground hover:bg-muted"
         >
           {t("Back to campaigns")}
         </button>
@@ -557,479 +567,376 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     );
   }
 
+  const previewTab: PreviewTab = step === "post" ? "post" : step === "comment" ? "comments" : "dm";
+  const steps: { key: Step; label: string }[] = [
+    { key: "post", label: "貼文" },
+    { key: "comment", label: "留言" },
+    { key: "dm", label: "私訊" },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {importQueue && (
-        <div className="rounded border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+        <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <span className="font-medium text-foreground">
-            {t("Importing {current} of {total}.", { current: importTotal - importQueue.length + 1, total: importTotal })}
+            匯入中：第 {importTotal - importQueue.length + 1} ／ {importTotal} 筆。
           </span>{" "}
-          <span className="text-muted-foreground">
-            {t("Fields are prefilled from your CSV. Pick the reel, edit anything, and save to load the next one — or Skip if you don’t want this one.")}
-          </span>
+          <span className="text-secondary-foreground">欄位已依 CSV 帶入，請選貼文、確認內容後儲存，或按「略過」。</span>
         </div>
       )}
 
-      {/* Top bar */}
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {mode === "edit" ? (
-            <>
-              <span className="truncate text-sm font-semibold text-foreground">
-                {name || t("Untitled campaign")}
-              </span>
-              <span
-                className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                  isActive ? "bg-success/15 text-success" : "bg-zinc-500/15 text-muted-foreground"
-                }`}
-              >
-                {isActive ? t("LIVE") : t("PAUSED")}
-              </span>
-            </>
-          ) : (
-            <span className="text-sm text-muted-foreground">{t("New campaign")}</span>
-          )}
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-6">
+          <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
+            {mode === "new" ? "新增活動" : "編輯活動"}
+          </h1>
+          <span
+            className={`shrink-0 rounded-full px-4 py-2 text-[15px] ${
+              mode === "edit" && isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {mode === "edit" && isActive ? "啟用中" : "未啟用"}
+          </span>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {importQueue && (
             <button
               type="button"
               onClick={skipRow}
               disabled={saving}
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
+              className="h-12 rounded-xl border border-border px-5 text-[17px] text-secondary-foreground hover:bg-muted disabled:opacity-50"
             >
-              {importQueue.length > 1 ? t("Skip") : t("Skip & finish")}
+              {importQueue.length > 1 ? "略過" : "略過並結束"}
             </button>
           )}
-          {mode === "edit" &&
-            (isActive ? (
-              <button
-                type="button"
-                onClick={() => handleSubmit(false)}
-                disabled={saving}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
-              >
-                {t("Stop")}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSubmit(true)}
-                disabled={saving}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
-              >
-                {t("Go Live")}
-              </button>
-            ))}
           <button
             type="button"
-            onClick={() => handleSubmit(mode === "new" ? true : isActive)}
+            onClick={() => handleSubmit(false)}
             disabled={saving}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+            className="h-12 rounded-xl bg-primary/15 px-6 text-[17px] font-bold text-primary hover:bg-primary/25 disabled:opacity-50"
           >
-            {saving ? t("Saving…") : mode === "new" ? t("Go Live") : t("Save changes")}
+            {mode === "edit" && isActive ? "儲存並暫停" : "儲存但不啟用"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubmit(true)}
+            disabled={saving}
+            className="h-12 rounded-xl bg-primary px-6 text-[17px] font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            {saving ? "儲存中…" : mode === "new" ? "啟用活動" : isActive ? "儲存變更" : "儲存並啟用"}
           </button>
         </div>
       </div>
 
-      {/* min-w-0 on the cells: a grid item defaults to min-width:auto, so a
-          long string widens the whole page instead of wrapping. */}
-      <div className="grid gap-6 lg:grid-cols-[300px_1fr] lg:gap-8">
-      {/* Left: controls */}
-      <div className="space-y-8 min-w-0">
-        {error && (
-          <div className="rounded border border-error/20 bg-error/10 p-3 text-sm text-error">
-            {error}
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,436px)_1fr] lg:gap-20">
+        {/* Left: fields */}
+        <div className="min-w-0 space-y-8">
+          {error && (
+            <div className="rounded-xl border border-error/20 bg-error/10 p-3 text-sm text-error">{error}</div>
+          )}
+
+          <div>
+            <FieldLabel>活動名稱</FieldLabel>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="輸入活動名稱，如：留言領 AI 工具"
+              maxLength={100}
+              className="h-16 w-full rounded-xl border border-border bg-background px-4 text-[15px] text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+            />
           </div>
-        )}
 
-        <div className="space-y-3">
-          <label className="text-sm font-semibold text-foreground">
-            {t("Campaign name")}{" "}
-            <span className="font-normal text-muted-foreground">{t("(optional)")}</span>
-          </label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("e.g. YC referral")}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-            maxLength={100}
-          />
-          {accounts.length > 1 && (
-            <div className="pt-2">
-              <AccountSelect
-                accounts={accounts}
-                value={selectedAccountId}
-                onChange={(id) => {
-                  setSelectedAccountId(id);
-                  setPostId(null);
-                  setPostUrl(null);
-                  setPostThumb(null);
-                }}
-                includeAll={false}
-                label="帳號平台"
-              />
+          <div>
+            <FieldLabel>設定順序</FieldLabel>
+            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border p-2">
+              {steps.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setStep(s.key)}
+                  aria-pressed={step === s.key}
+                  className={`h-11 rounded-xl text-[15px] transition-colors ${
+                    step === s.key ? "bg-segment font-medium text-white" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
 
-        <Section title={t("When someone comments on")}>
-          <Radio
-            checked={triggerScope === "specific"}
-            onSelect={() => setTriggerScope("specific")}
-          >
-            {t("a specific post or reel")}
-          </Radio>
-          {triggerScope === "specific" && (
-            <div className="rounded-lg border border-border p-2">
-              <PostPicker
-                selectedPostId={postId}
-                instagramAccountId={selectedAccountId}
-                usedPostIds={usedPosts}
-                onSelect={handlePostSelect}
-              />
-            </div>
-          )}
-          <Radio
-            checked={triggerScope === "any"}
-            onSelect={() => setTriggerScope("any")}
-          >
-            {t("any post or reel")}
-          </Radio>
-          <Radio
-            checked={triggerScope === "next"}
-            onSelect={() => setTriggerScope("next")}
-          >
-            {t("next post or reel")}
-          </Radio>
-        </Section>
-
-        <Section title={t("And this comment has")}>
-          <Radio
-            checked={matchMode === "specific"}
-            onSelect={() => setMatchMode("specific")}
-          >
-            {t("a specific word or words")}
-          </Radio>
-          {matchMode === "specific" && (
-            <div className="space-y-1">
-              <input
-                value={keywordText}
-                onChange={(e) => setKeywordText(e.target.value)}
-                placeholder={t("Enter a word or multiple")}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-              />
-              <p className="text-xs text-muted-foreground">{t("Use commas to separate words")}</p>
-              <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
-                <span className="text-sm text-foreground">{t("Match part of a word")}</span>
-                <Toggle
-                  on={!wholeWordMatch}
-                  onToggle={() => setWholeWordMatch(!wholeWordMatch)}
-                />
-              </div>
-              {!wholeWordMatch && (
-                <p className="text-xs text-muted-foreground">
-                  {t("Also fires when a keyword is part of a longer word, e.g. “link” in “links”.")}
-                </p>
+          {/* 貼文 */}
+          {step === "post" && (
+            <>
+              {accounts.length > 1 && (
+                <div>
+                  <FieldLabel>選擇帳號平台</FieldLabel>
+                  <div className="space-y-3">
+                    {[...accounts]
+                      .sort((a, b) => Number(a.provider === "FACEBOOK") - Number(b.provider === "FACEBOOK"))
+                      .map((a) => (
+                        <Choice key={a.id} selected={a.id === selectedAccountId} onSelect={() => selectAccount(a.id)}>
+                          {platformName(a, accounts)}
+                        </Choice>
+                      ))}
+                  </div>
+                </div>
               )}
-            </div>
-          )}
-          <Radio
-            checked={matchMode === "any"}
-            onSelect={() => setMatchMode("any")}
-          >
-            {t("any word")}
-          </Radio>
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
-            <span className="text-sm text-foreground">
-              {t("also reply when someone DMs")}{" "}
-              {matchMode === "any" ? t("anything") : t("these words")}
-            </span>
-            <Toggle
-              on={dmTriggerEnabled}
-              onToggle={() => setDmTriggerEnabled(!dmTriggerEnabled)}
-            />
-          </div>
-          {dmTriggerEnabled && (
-            <p className="text-xs text-muted-foreground">
-              {matchMode === "any"
-                ? t("Every DM to this account gets the reply below — use with care.")
-                : t("A DM containing any of these words gets the same reply, no comment needed.")}
-            </p>
-          )}
-          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
-            <span className="text-sm text-foreground">
-              {t("reply to their comments under the post")}
-            </span>
-            <Toggle
-              on={publicReplyEnabled}
-              onToggle={() => setPublicReplyEnabled(!publicReplyEnabled)}
-            />
-          </div>
-          {publicReplyEnabled && (
-            <div className="space-y-2">
-              {publicReplyMessages.map((msg, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    value={msg}
-                    onChange={(e) =>
-                      setPublicReplyMessages((prev) =>
-                        prev.map((m, idx) => (idx === i ? e.target.value : m))
-                      )
-                    }
-                    placeholder={t("Sent you a DM! 📩")}
-                    maxLength={1000}
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-                  />
-                  {publicReplyMessages.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPublicReplyMessages((prev) =>
-                          prev.filter((_, idx) => idx !== i)
-                        )
-                      }
-                      className="shrink-0 px-2 text-muted-foreground hover:text-error"
-                      aria-label={t("Remove reply")}
-                    >
-                      ✕
-                    </button>
+
+              <div>
+                <FieldLabel>選擇指定內容</FieldLabel>
+                <div className="space-y-3">
+                  <Choice selected={triggerScope === "specific"} onSelect={() => setTriggerScope("specific")}>
+                    指定一篇貼文／Reel
+                  </Choice>
+                  {triggerScope === "specific" && (
+                    <div className="rounded-xl bg-secondary p-3">
+                      <PostPicker
+                        selectedPostId={postId}
+                        instagramAccountId={selectedAccountId}
+                        usedPostIds={usedPosts}
+                        onSelect={(id, url, thumb, caption) => {
+                          setPostId(id);
+                          setPostUrl(url ?? null);
+                          setPostThumb(thumb ?? null);
+                          setPostCaption(caption ?? "");
+                        }}
+                      />
+                    </div>
+                  )}
+                  <Choice selected={triggerScope === "any"} onSelect={() => setTriggerScope("any")}>
+                    帳號內任何貼文／Reel
+                  </Choice>
+                  {!isFacebook && (
+                    <Choice selected={triggerScope === "next"} onSelect={() => setTriggerScope("next")}>
+                      下一篇貼文／Reel
+                    </Choice>
                   )}
                 </div>
-              ))}
-              {publicReplyMessages.length < 10 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPublicReplyMessages((prev) => [...prev, ""])
-                  }
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  {t("+ Add another reply")}
-                </button>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {t("One is picked at random each time, so replies don't look identical.")}
-              </p>
-            </div>
+              </div>
+            </>
           )}
-        </Section>
 
-        <Section title={t("They will get")}>
-          <div className="rounded-lg border border-border p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">{t("an opening DM")}</span>
-              <Toggle
-                on={openingDmEnabled}
-                onToggle={() => setOpeningDmEnabled(!openingDmEnabled)}
-              />
-            </div>
-            {openingDmEnabled && (
-              <div className="mt-3 space-y-2">
-                <textarea
-                  value={openingDmMessage}
-                  onChange={(e) => setOpeningDmMessage(e.target.value)}
-                  placeholder={t("Hey there! I'm so happy you're here 😊")}
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
-                  maxLength={1000}
-                />
-                <input
-                  value={openingDmButtonLabel}
-                  onChange={(e) => setOpeningDmButtonLabel(e.target.value)}
-                  placeholder={t("Send me the link")}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-                  maxLength={64}
-                />
+          {/* 留言 */}
+          {step === "comment" && (
+            <>
+              <div>
+                <FieldLabel>留言須符合</FieldLabel>
+                <div className="space-y-3">
+                  <Choice selected={matchMode === "specific"} onSelect={() => setMatchMode("specific")}>
+                    指定留言關鍵字
+                  </Choice>
+                  <Choice selected={matchMode === "any"} onSelect={() => setMatchMode("any")}>
+                    任何留言文字
+                  </Choice>
+                </div>
               </div>
-            )}
-          </div>
-          <div className="mt-3 rounded-lg border border-border p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">
-                {t("a follow requirement first")}
-              </span>
-              <Toggle
-                on={requireFollow}
-                onToggle={() => setRequireFollow(!requireFollow)}
-              />
-            </div>
-            {requireFollow && (
-              <div className="mt-3 space-y-2">
-                <textarea
-                  value={followPromptMessage}
-                  onChange={(e) => setFollowPromptMessage(e.target.value)}
-                  placeholder={DEFAULT_FOLLOW_PROMPT_MESSAGE}
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
-                  maxLength={1000}
-                />
-                <input
-                  value={followPromptButtonLabel}
-                  onChange={(e) => setFollowPromptButtonLabel(e.target.value)}
-                  placeholder={DEFAULT_FOLLOW_PROMPT_BUTTON}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-                  maxLength={20}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("We send the link only after they tap the button and Instagram confirms the follow. If it can't be verified, we send it anyway.")}
-                </p>
-              </div>
-            )}
-          </div>
-        </Section>
 
-        <Section title={t("And then, they will get")}>
-          <div className="rounded-lg border border-border p-3 space-y-2">
-            <span className="text-sm text-foreground">{t("a DM with a link")}</span>
-            <textarea
-              value={dmMessage}
-              onChange={(e) => setDmMessage(e.target.value)}
-              placeholder={t("Write a message")}
-              rows={3}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
-              maxLength={1000}
-            />
-            {linkOpen ? (
-              <div className="space-y-2">
-                <input
-                  value={trackedDestinationUrl}
-                  onChange={(e) => setTrackedDestinationUrl(e.target.value)}
-                  onBlur={ensureLinkToken}
-                  placeholder="https://yourlink.com/offer"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-                />
-                <input
-                  value={linkButtonLabel}
-                  onChange={(e) => setLinkButtonLabel(e.target.value)}
-                  placeholder={t("Button label (e.g. Open link)")}
-                  maxLength={20}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-                />
-                {secondLinkOpen ? (
-                  <div className="space-y-2 border-t border-border pt-2">
-                    <input
-                      value={secondaryDestinationUrl}
-                      onChange={(e) => setSecondaryDestinationUrl(e.target.value)}
-                      placeholder="https://yourlink.com/second"
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
-                    />
-                    <input
-                      value={secondaryButtonLabel}
-                      onChange={(e) => setSecondaryButtonLabel(e.target.value)}
-                      placeholder={t("Second button label")}
-                      maxLength={20}
-                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
+              {matchMode === "specific" && (
+                <div>
+                  <FieldLabel>留言關鍵字（多個關鍵字，請以逗號 , 分隔）</FieldLabel>
+                  <input
+                    value={keywordText}
+                    onChange={(e) => setKeywordText(e.target.value)}
+                    placeholder="輸入一個或多個以上的關鍵字"
+                    className={filledInput}
+                  />
+                  <div className="mt-3">
+                    <ToggleCard on={wholeWordMatch} onToggle={() => setWholeWordMatch(!wholeWordMatch)}>
+                      須完全符合關鍵字才觸發
+                    </ToggleCard>
+                  </div>
+                  <Note>例如設定關鍵字「溝通」，留言「溝通好難」就不會觸發</Note>
+                </div>
+              )}
+
+              <div>
+                <FieldLabel>自動回覆留言</FieldLabel>
+                <div className="space-y-3">
+                  <ToggleCard on={publicReplyEnabled} onToggle={() => setPublicReplyEnabled(!publicReplyEnabled)}>
+                    開啟下方公開回覆留言
+                  </ToggleCard>
+                  {publicReplyEnabled && (
+                    <>
+                      {publicReplyMessages.map((msg, i) => (
+                        <div key={i} className="relative">
+                          <input
+                            value={msg}
+                            onChange={(e) =>
+                              setPublicReplyMessages((prev) => prev.map((m, idx) => (idx === i ? e.target.value : m)))
+                            }
+                            placeholder={["已私訊給你囉！", "快去打開訊息吧 📩", "嗨～私訊你囉 🙌"][i] ?? "輸入回覆內容"}
+                            maxLength={1000}
+                            className={`${filledInput} ${publicReplyMessages.length > 1 ? "pr-10" : ""}`}
+                          />
+                          {publicReplyMessages.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setPublicReplyMessages((prev) => prev.filter((_, idx) => idx !== i))}
+                              aria-label="移除這則回覆"
+                              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {publicReplyMessages.length < MAX_REPLIES && (
+                        <button
+                          type="button"
+                          onClick={() => setPublicReplyMessages((prev) => [...prev, ""])}
+                          className={addButton}
+                        >
+                          <Plus className="size-4" />
+                          新增隨機回覆（最多 {MAX_REPLIES} 則）
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* 私訊 */}
+          {step === "dm" && (
+            <>
+              <div>
+                <FieldLabel>選擇私訊方式</FieldLabel>
+                <div className="space-y-3">
+                  <Choice selected={effectiveDmMode === "one"} onSelect={() => setDmMode("one")}>
+                    直接傳送 1 則訊息
+                  </Choice>
+                  <Choice selected={effectiveDmMode === "two"} onSelect={() => setDmMode("two")} disabled={isFacebook}>
+                    兩段式訊息（先要求追蹤，再傳連結）
+                  </Choice>
+                </div>
+                <Note>
+                  兩段式訊息功能，僅限 Instagram 使用{isFacebook ? "（Facebook 無法確認是否追蹤）" : ""}
+                </Note>
+              </div>
+
+              {effectiveDmMode === "two" && (
+                <div className="space-y-6 border-b border-border pb-8">
+                  <div>
+                    <FieldLabel>開頭訊息</FieldLabel>
+                    <textarea
+                      value={openingText}
+                      onChange={(e) => setOpeningText(e.target.value)}
+                      placeholder={DEFAULT_FOLLOW_PROMPT_MESSAGE}
+                      rows={5}
+                      maxLength={640}
+                      className={filledArea}
                     />
                   </div>
-                ) : (
+                  <div>
+                    <FieldLabel>開頭訊息按鈕文字</FieldLabel>
+                    <input
+                      value={openingButton}
+                      onChange={(e) => setOpeningButton(e.target.value)}
+                      placeholder={DEFAULT_FOLLOW_PROMPT_BUTTON}
+                      maxLength={20}
+                      className={filledInput}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <FieldLabel>訊息內容</FieldLabel>
+                <textarea
+                  value={dmMessage}
+                  onChange={(e) => setDmMessage(e.target.value)}
+                  placeholder="輸入訊息內容"
+                  rows={4}
+                  maxLength={1000}
+                  className={filledArea}
+                />
+                <p className="mt-2 px-4 text-xs text-secondary-foreground">可輸入 {"{username}"} 帶入粉絲名稱</p>
+              </div>
+
+              <div className="space-y-6">
+                {links.map((link, i) => (
+                  <div key={i} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[15px] text-secondary-foreground">連結按鈕{links.length > 1 ? ` ${i + 1}` : ""}</p>
+                      <button
+                        type="button"
+                        onClick={() => setLinks((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="text-sm text-muted-foreground hover:text-foreground"
+                      >
+                        移除
+                      </button>
+                    </div>
+                    <input
+                      value={link.url}
+                      onChange={(e) =>
+                        setLinks((prev) => prev.map((l, idx) => (idx === i ? { ...l, url: e.target.value } : l)))
+                      }
+                      placeholder="輸入連結網址，如：https://metavoice.com.tw"
+                      className={filledInput}
+                    />
+                    <input
+                      value={link.label}
+                      onChange={(e) =>
+                        setLinks((prev) => prev.map((l, idx) => (idx === i ? { ...l, label: e.target.value } : l)))
+                      }
+                      placeholder="輸入按鈕文字"
+                      maxLength={20}
+                      className={filledInput}
+                    />
+                  </div>
+                ))}
+                {links.length < MAX_LINKS && (
                   <button
                     type="button"
-                    onClick={() => setSecondLinkOpen(true)}
-                    className="w-full rounded-lg border border-border py-2 text-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => setLinks((prev) => [...prev, { url: "", label: "" }])}
+                    className={addButton}
                   >
-                    {t("+ Add A Second Link")}
+                    <Plus className="size-4" />
+                    新增連結按鈕（最多 {MAX_LINKS} 個）
                   </button>
                 )}
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setLinkOpen(true)}
-                className="w-full rounded-lg border border-border py-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                {t("+ Add A Link")}
-              </button>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {"{link}"} {t("inserts the tracked link;")} {"{username}"} {t("personalizes.")}
-            </p>
-          </div>
-          <div className="mt-3 rounded-lg border border-border p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">
-                {t("a follow-up thank-you message")}
-              </span>
-              <Toggle
-                on={followUpEnabled}
-                onToggle={() => setFollowUpEnabled(!followUpEnabled)}
-              />
-            </div>
-            {followUpEnabled && (
-              <div className="mt-3 space-y-2">
-                <textarea
-                  value={followUpMessage}
-                  onChange={(e) => setFollowUpMessage(e.target.value)}
-                  placeholder={t("Btw just wanted to say thanks for following me, I appreciate the support 🙌")}
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none resize-none"
-                  maxLength={1000}
-                />
-                <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-                  <span className="text-xs text-muted-foreground">{t("Send it")}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1440}
-                    value={followUpDelayMinutes}
-                    onChange={(e) =>
-                      setFollowUpDelayMinutes(
-                        Math.max(0, Math.min(1440, Math.floor(Number(e.target.value) || 0)))
-                      )
-                    }
-                    className="w-20 rounded-lg border border-border bg-surface px-2 py-1 text-sm text-foreground focus:border-primary/40 focus:outline-none"
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    {t("minutes after the link")}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {followUpDelayMinutes > 0
-                    ? t("Sent {minutes} min after they tap through.", { minutes: followUpDelayMinutes })
-                    : t("Sent right after they tap through.")}
-                  {" {username}"} {t("personalizes it. Max 24 hours, to stay inside Instagram's messaging window.")}
-                </p>
-              </div>
-            )}
-          </div>
-        </Section>
-      </div>
-
-      {/* Right: preview */}
-      <div>
-        <p className="mb-4 text-sm text-muted-foreground">{t("Preview")}</p>
-        <div className="flex min-w-0 justify-center lg:sticky lg:top-6 lg:block">
-          <CampaignPreview
-            tab={previewTab}
-            onTabChange={setPreviewTab}
-            username={username}
-            avatarUrl={avatarUrl}
-            postThumb={postThumb}
-            caption={postCaption}
-            sampleComment={keywords[0] ?? ""}
-            dmTriggerEnabled={dmTriggerEnabled}
-            publicReplyEnabled={publicReplyEnabled}
-            publicReplyMessage={publicReplyMessages.find((m) => m.trim()) ?? ""}
-            openingDmEnabled={openingDmEnabled}
-            openingDmMessage={openingDmMessage}
-            openingDmButtonLabel={openingDmButtonLabel}
-            revealMessage={dmMessage}
-            hasLink={Boolean(trackedDestinationUrl.trim())}
-            linkButtonLabel={linkButtonLabel || "Open link"}
-            linkUrl={trackedDestinationUrl.trim() || undefined}
-            hasSecondLink={
-              secondLinkOpen && Boolean(secondaryDestinationUrl.trim())
-            }
-            secondLinkButtonLabel={secondaryButtonLabel || "Open link"}
-            requireFollow={requireFollow}
-            followPromptMessage={followPromptMessage}
-            followPromptButtonLabel={followPromptButtonLabel || DEFAULT_FOLLOW_PROMPT_BUTTON}
-            followUpEnabled={followUpEnabled}
-            followUpMessage={followUpMessage}
-            followUpDelayMinutes={followUpDelayMinutes}
-          />
+            </>
+          )}
         </div>
-      </div>
+
+        {/* Right: preview */}
+        <div className="min-w-0">
+          <p className="mb-6 text-[15px] text-secondary-foreground">預覽</p>
+          <div className="flex justify-center lg:sticky lg:top-6">
+            <CampaignPreview
+              tab={previewTab}
+              onTabChange={() => {}}
+              hideTabs
+              username={username}
+              avatarUrl={avatarUrl}
+              postThumb={postThumb}
+              caption={postCaption}
+              sampleComment={keywords[0] ?? ""}
+              dmTriggerEnabled={false}
+              publicReplyEnabled={publicReplyEnabled}
+              publicReplyMessage={publicReplyMessages.find((m) => m.trim()) ?? ""}
+              openingDmEnabled={false}
+              openingDmMessage=""
+              openingDmButtonLabel=""
+              revealMessage={dmMessage}
+              hasLink={Boolean(links[0]?.url.trim())}
+              linkButtonLabel={links[0]?.label || "開啟連結"}
+              linkUrl={links[0]?.url.trim() || undefined}
+              hasSecondLink={Boolean(links[1]?.url.trim())}
+              secondLinkButtonLabel={links[1]?.label || "開啟連結"}
+              requireFollow={effectiveDmMode === "two"}
+              followPromptMessage={openingText || DEFAULT_FOLLOW_PROMPT_MESSAGE}
+              followPromptButtonLabel={openingButton || DEFAULT_FOLLOW_PROMPT_BUTTON}
+              followUpEnabled={followUp.enabled}
+              followUpMessage={followUp.message}
+              followUpDelayMinutes={followUp.delay}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

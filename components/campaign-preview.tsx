@@ -19,6 +19,8 @@ export type PreviewTab = "post" | "comments" | "dm" | "dmTrigger";
 interface CampaignPreviewProps {
   tab: PreviewTab;
   onTabChange: (tab: PreviewTab) => void;
+  // The builder switches screens from its own 貼文／留言／私訊 tabs.
+  hideTabs?: boolean;
   username: string;
   avatarUrl: string | null;
   postThumb: string | null;
@@ -563,6 +565,7 @@ export default function CampaignPreview(props: CampaignPreviewProps) {
         )}
       </Phone>
 
+      {!props.hideTabs && (
       <div className="inline-flex rounded-full bg-surface p-1">
         {tabs.map((t) => (
           <button
@@ -579,6 +582,7 @@ export default function CampaignPreview(props: CampaignPreviewProps) {
           </button>
         ))}
       </div>
+      )}
     </div>
   );
 }

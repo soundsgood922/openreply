@@ -70,7 +70,9 @@ const createAutomationSchema = z
       .nullable(),
     secondaryButtonLabel: z.string().max(20).optional().nullable(),
     isActive: z.boolean().optional().default(true),
-    wholeWordMatch: z.boolean().optional().default(true),
+    // Chinese has no spaces between words, so contains-the-keyword is the
+    // useful default; exact matching is opt-in.
+    wholeWordMatch: z.boolean().optional().default(false),
   })
   // A campaign must target a specific post, any post, or the next reel.
   .refine(
@@ -416,7 +418,8 @@ export async function POST(request: NextRequest) {
       matchAnyPost,
       keywords: matchAnyWord ? [] : parsed.data.keywords,
       matchAnyWord,
-      dmTriggerEnabled: parsed.data.dmTriggerEnabled,
+      // The DM keyword trigger was retired from the builder (2026-11).
+      dmTriggerEnabled: false,
       dmMessage: parsed.data.dmMessage,
       openingDmEnabled,
       openingDmMessage: openingDmEnabled
@@ -545,6 +548,7 @@ export async function PATCH(request: NextRequest) {
   // Keep dependent fields consistent: any-word clears keywords; a disabled
   // opening DM clears its message and button.
   if (automationData.matchAnyWord === true) automationData.keywords = [];
+  if (automationData.dmTriggerEnabled !== undefined) automationData.dmTriggerEnabled = false;
   if (automationData.openingDmEnabled === false) {
     automationData.openingDmMessage = null;
     automationData.openingDmButtonLabel = null;

@@ -12,6 +12,7 @@
 import { useI18n } from "@/lib/i18n/provider";
 import { useEffect, useState } from "react";
 import { readCache, writeCache } from "@/lib/client-cache";
+import { Search } from "lucide-react";
 
 const PAGE_SIZE = 60;
 
@@ -72,9 +73,15 @@ export default function PostPicker({
     const cached = readCache<InstagramPost[]>(cacheKey, 15 * 60 * 1000);
     // Hydrating state from cache is a legitimate effect use here.
     /* eslint-disable react-hooks/set-state-in-effect */
+    // A new account starts clean: an error or posts from the previous account
+    // must not carry over while this one loads.
+    setError(null);
     if (cached.data) {
       setPosts(cached.data);
       setLoading(false);
+    } else {
+      setPosts([]);
+      setLoading(true);
     }
     /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -104,9 +111,9 @@ export default function PostPicker({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="aspect-square rounded bg-surface" />
+          <div key={i} className="aspect-square animate-pulse rounded-lg bg-background" />
         ))}
       </div>
     );
@@ -139,102 +146,90 @@ export default function PostPicker({
   const remaining = matching.length - visible.length;
 
   return (
-    <div className="space-y-2">
-      {limitations.map(note => <p key={note} className="text-xs text-muted-foreground">{note}</p>)}
-      <div className="flex items-center justify-between gap-2">
+    <div className="space-y-3">
+      {limitations.map((note) => (
+        <p key={note} className="text-xs text-muted-foreground">{note}</p>
+      ))}
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-secondary-foreground" />
         <input
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            // Back to one batch on every new search. Without this, a grid
-            // expanded under an earlier query stays expanded once it is
-            // cleared, which is the case this whole change exists to avoid.
+            // Back to one batch on every new search, so a grid expanded under
+            // an earlier query does not stay expanded once it is cleared.
             setShown(PAGE_SIZE);
           }}
-          placeholder={t("Search your posts by caption…")}
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-primary/40 focus:outline-none"
+          placeholder="依貼文內容搜尋..."
+          className="h-12 w-full rounded-xl bg-background pr-4 pl-11 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 focus:outline-none"
         />
-        <span className="shrink-0 text-xs text-muted-foreground">{posts.length}</span>
       </div>
+      <p className="px-4 text-xs text-secondary-foreground">※ 協作貼文，僅限發布者可設定自動回覆</p>
       {visible.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          {t("No posts match “")}{query}{t("”")}
+          找不到含「{query}」的貼文
         </p>
       ) : (
         <>
-          {usedPostIds && Object.keys(usedPostIds).length > 0 && (
-            <p className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm border border-warning/50" />
-              {t("Already used")}
-            </p>
-          )}
-          {/* auto-rows-min + content-start keep each row at its natural height.
-              Without them the rows share out max-h-64 instead of scrolling, and
-              the square thumbnails flatten into strips. */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 auto-rows-min content-start overflow-y-auto p-1">
+          {/* auto-rows-min + content-start keep each row at its natural height
+              instead of sharing out the scroll box's height. */}
+          <div className="grid max-h-80 auto-rows-min grid-cols-3 content-start gap-3 overflow-y-auto sm:grid-cols-4">
             {visible.map((post) => {
               const isSelected = selectedPostId === post.id;
               const usedByName = usedPostIds?.[post.id];
               const isUsed = Boolean(usedByName) && !isSelected;
               const thumb = post.thumbnail_url ?? post.media_url;
               const isVideo = post.media_type === "VIDEO";
-              const showVideo =
-                isVideo && hoveredId === post.id && Boolean(post.media_url);
+              const showVideo = isVideo && hoveredId === post.id && Boolean(post.media_url);
               return (
-          <button
-            key={post.id}
-            type="button"
-            onClick={() => onSelect(post.id, post.permalink, thumb, post.caption)}
-            onMouseEnter={() => setHoveredId(post.id)}
-            onMouseLeave={() =>
-              setHoveredId((cur) => (cur === post.id ? null : cur))
-            }
-            aria-pressed={isSelected}
-            title={isUsed && usedByName ? t("Already used by \"{name}\"", { name: usedByName }) : undefined}
-            className={`
-              relative aspect-square rounded overflow-hidden border-2
-              ${
-                isSelected
-                  ? "border-primary"
-                  : isUsed
-                    ? "border-warning/40 hover:border-warning/60"
-                    : "border-border hover:border-border-hover"
-              }
-            `}
-          >
-            {thumb ? (
-              <img
-                src={thumb}
-                alt={post.caption?.slice(0, 50) ?? t("Instagram post")}
-                loading="lazy"
-                decoding="async"
-                className={`w-full h-full object-cover ${isUsed ? "opacity-75" : ""}`}
-              />
-            ) : (
-              <div className="w-full h-full bg-surface flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">{t("No image")}</span>
-              </div>
-            )}
-            {showVideo && (
-              <video
-                src={post.media_url}
-                poster={thumb}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="none"
-                className={`absolute inset-0 h-full w-full object-cover ${
-                  isUsed ? "opacity-60" : ""
-                }`}
-              />
-            )}
-            {isSelected && (
-              <span className="absolute bottom-0 inset-x-0 bg-primary text-white text-xs py-1">
-                {t("Selected")}
-              </span>
-            )}
-          </button>
+                <button
+                  key={post.id}
+                  type="button"
+                  onClick={() => onSelect(post.id, post.permalink, thumb, post.caption)}
+                  onMouseEnter={() => setHoveredId(post.id)}
+                  onMouseLeave={() => setHoveredId((cur) => (cur === post.id ? null : cur))}
+                  aria-pressed={isSelected}
+                  title={isUsed && usedByName ? `已設活動：${usedByName}` : undefined}
+                  className={`relative aspect-square overflow-hidden rounded-lg ${
+                    isSelected ? "ring-3 ring-primary" : "hover:opacity-90"
+                  }`}
+                >
+                  {thumb ? (
+                    <img
+                      src={thumb}
+                      alt={post.caption?.slice(0, 50) ?? "貼文"}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-[#9e9e9e] text-xs text-white">
+                      貼文無圖片
+                    </div>
+                  )}
+                  {showVideo && (
+                    <video
+                      src={post.media_url}
+                      poster={thumb}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="none"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  )}
+                  {isUsed && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-sm font-bold text-white">
+                      已設活動
+                    </span>
+                  )}
+                  {isSelected && (
+                    <span className="absolute inset-x-0 bottom-0 bg-primary py-1 text-xs font-medium text-white">
+                      已選擇
+                    </span>
+                  )}
+                </button>
               );
             })}
           </div>
@@ -242,9 +237,9 @@ export default function PostPicker({
             <button
               type="button"
               onClick={() => setShown((n) => n + PAGE_SIZE)}
-              className="w-full rounded-lg border border-border py-2 text-sm text-muted-foreground hover:text-foreground"
+              className="h-11 w-full rounded-xl bg-background text-sm text-secondary-foreground hover:text-foreground"
             >
-              {t("Show")} {Math.min(PAGE_SIZE, remaining)} {t("more")}
+              顯示更早的貼文
             </button>
           )}
         </>

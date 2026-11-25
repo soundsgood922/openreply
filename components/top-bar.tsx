@@ -55,7 +55,10 @@ export default function TopBar({
 
   // These pages draw their own title row (title plus platform switch), so on
   // a desktop the bar would only repeat it.
-  const ownHeader = OWN_HEADER_PAGES.has(pathname);
+  const ownHeader =
+    OWN_HEADER_PAGES.has(pathname) ||
+    pathname === "/campaigns/new" ||
+    (pathname.startsWith("/campaigns/") && pathname.endsWith("/edit"));
 
   return (
     <header
