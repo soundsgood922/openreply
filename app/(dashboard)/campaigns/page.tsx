@@ -374,7 +374,7 @@ export default function CampaignsPage() {
       {/* Campaign table */}
       {filtered.length > 0 && (
         <div>
-          <div className="hidden items-center gap-6 rounded-xl bg-secondary px-12 py-3 text-[15px] text-secondary-foreground md:flex">
+          <div className="hidden items-center gap-6 rounded-xl bg-secondary px-7 py-3 text-[15px] text-secondary-foreground md:flex">
             <span className="flex-1">活動設定</span>
             <span className="w-34 text-center">指定貼文</span>
             <span className="w-20 text-center">狀態</span>
@@ -427,6 +427,7 @@ export default function CampaignsPage() {
                       )}
                     </div>
 
+                    {/* One line of numbers that wraps with the available width. */}
                     <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                       <span>{auto.analytics.ctr}% 點擊率</span>
                       <span className="text-border">|</span>
@@ -439,8 +440,7 @@ export default function CampaignsPage() {
                       )}
                       <span className="text-border">|</span>
                       <span>{auto.analytics.clicks} 次連結按鈕</span>
-                    </p>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                      <span className="text-border">|</span>
                       <span>{auto.analytics.runs} 次留言觸發</span>
                       <span className="text-border">|</span>
                       <span>{auto.analytics.skipped} 則已略過</span>
