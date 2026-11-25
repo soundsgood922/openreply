@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n/provider";
+import { DEFAULT_FOLLOW_PROMPT_BUTTON, DEFAULT_FOLLOW_PROMPT_MESSAGE } from "@/lib/automation/follow-prompt";
 
 
 /* eslint-disable @next/next/no-img-element */
@@ -396,16 +397,16 @@ function DmScreen({
               <div className="max-w-[80%] overflow-hidden rounded-2xl rounded-bl-md bg-zinc-800">
                 <p className="whitespace-pre-wrap px-3 py-2 text-sm">
                   {followPromptMessage ||
-                    "quick favor before i send your link. i don't make any money from this, it's free. if you want to support me, just don't unfollow after, and star the repo on github if it helps you. tap the button once you're following and i'll send it over"}
+                    DEFAULT_FOLLOW_PROMPT_MESSAGE}
                 </p>
                 <div className="mx-1.5 mb-1.5 rounded-xl bg-zinc-700 px-4 py-1.5 text-center text-sm font-medium text-white">
-                  {followPromptButtonLabel || "i'm following"}
+                  {followPromptButtonLabel || DEFAULT_FOLLOW_PROMPT_BUTTON}
                 </div>
               </div>
             </div>
             <div className="flex justify-end">
               <div className="rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm">
-                {followPromptButtonLabel || "i'm following"}
+                {followPromptButtonLabel || DEFAULT_FOLLOW_PROMPT_BUTTON}
               </div>
             </div>
           </>
