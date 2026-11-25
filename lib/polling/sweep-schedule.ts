@@ -3,7 +3,7 @@
  *
  * Webhooks deliver nearly every comment within seconds whatever the post's
  * age; the sweep only catches the few Meta never pushes. A post past its
- * first couple of weeks gets a comment every few months, so sweeping it every
+ * first month gets a comment every few months, so sweeping it every
  * 30 seconds spends thousands of API calls a day on nothing. Posts older than
  * OLD_POST_DAYS are swept every OLD_POST_INTERVAL_MS instead; newer posts keep
  * the worker's normal interval.
@@ -13,7 +13,7 @@
  */
 import { getRedisConnection } from "@/lib/queue/client";
 
-export const OLD_POST_DAYS = Number(process.env.COMMENT_POLL_OLD_POST_DAYS ?? 14);
+export const OLD_POST_DAYS = Number(process.env.COMMENT_POLL_OLD_POST_DAYS ?? 30);
 export const OLD_POST_INTERVAL_MS = Number(
   process.env.COMMENT_POLL_OLD_POST_INTERVAL_MS ?? 30 * 60_000
 );

@@ -31,7 +31,7 @@ import {
 
 const DAY = 86_400_000;
 const NOW = Date.parse("2026-11-25T00:00:00Z");
-const old = new Date(NOW - 30 * DAY);
+const old = new Date(NOW - 45 * DAY);
 const recent = new Date(NOW - 3 * DAY);
 
 beforeEach(() => {
@@ -40,9 +40,10 @@ beforeEach(() => {
 });
 
 describe("isOldPost", () => {
-  it("is true only past 14 days", () => {
-    expect(isOldPost(new Date(NOW - 15 * DAY), NOW)).toBe(true);
-    expect(isOldPost(new Date(NOW - 13 * DAY), NOW)).toBe(false);
+  it("is true only past 30 days", () => {
+    expect(isOldPost(new Date(NOW - 31 * DAY), NOW)).toBe(true);
+    expect(isOldPost(new Date(NOW - 29 * DAY), NOW)).toBe(false);
+    expect(isOldPost(new Date(NOW - 15 * DAY), NOW)).toBe(false);
   });
   it("treats an unknown publish time as new", () => {
     expect(isOldPost(null, NOW)).toBe(false);
