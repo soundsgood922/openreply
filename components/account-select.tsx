@@ -45,16 +45,22 @@ function optionLabel(account: AccountOption, accounts: AccountOption[]) {
 /** Platform chip from the designs: outlined, Facebook blue / Instagram pink. */
 export function PlatformTag({
   account,
+  muted = false,
 }: {
   account: Pick<AccountOption, "provider" | "username">;
+  // Grey instead of the platform colour, e.g. for a paused campaign.
+  muted?: boolean;
 }) {
   const facebook = platformOf(account) === "FACEBOOK";
+  const tone = muted
+    ? "border-border text-muted-foreground"
+    : facebook
+      ? "border-facebook/40 text-facebook"
+      : "border-instagram/40 text-instagram";
   return (
     <span
       title={accountLabel(account)}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border bg-background px-2.5 py-1 text-sm font-medium ${
-        facebook ? "border-facebook/40 text-facebook" : "border-instagram/40 text-instagram"
-      }`}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border bg-background px-2.5 py-1 text-sm font-medium ${tone}`}
     >
       {facebook ? <FacebookIcon /> : <InstagramIcon />}
       {facebook ? "Facebook" : "Instagram"}

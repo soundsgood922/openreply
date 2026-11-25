@@ -80,8 +80,9 @@ export default function CampaignsPage() {
   // postId -> current thumbnail URL, fetched live (Instagram URLs expire, so
   // they are never stored on the campaign).
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
-  // postId -> video URL for reels, so a campaign thumbnail can play on click.
-  const [videos, setVideos] = useState<Record<string, string>>({});
+  // postId -> video URL for reels (cached with the thumbnails; not shown now
+  // that a thumbnail opens the post).
+  const [, setVideos] = useState<Record<string, string>>({});
   // The reel currently playing in the lightbox (null when closed).
   const [playingVideo, setPlayingVideo] = useState<{
     url: string;
@@ -380,7 +381,6 @@ export default function CampaignsPage() {
 
           <div className="divide-y divide-border px-0 md:px-7">
             {filtered.map((auto) => {
-              const videoUrl = auto.postId ? videos[auto.postId] : undefined;
               const thumb = auto.postId ? thumbnails[auto.postId] : undefined;
               const twoStep = auto.openingDmEnabled || auto.analytics.claims > 0;
               return (
@@ -391,22 +391,29 @@ export default function CampaignsPage() {
                 >
                   {/* Thumbnail */}
                   <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                    {thumb ? (
-                      videoUrl ? (
-                        <button
-                          type="button"
-                          onClick={() => setPlayingVideo({ url: videoUrl, postUrl: auto.postUrl })}
-                          aria-label={t("Play reel preview")}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={thumb} alt={t("Campaign reel")} className="size-28 rounded-xl object-cover sm:size-34" />
-                        </button>
-                      ) : (
-                        <a href={auto.postUrl ?? "#"} target="_blank" rel="noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={thumb} alt={t("Campaign post")} className="size-28 rounded-xl object-cover sm:size-34" />
-                        </a>
-                      )
+                    {thumb && auto.postUrl ? (
+                      // Hover: the image blurs under a half-orange veil reading
+                      // 前往貼文; a click opens the post.
+                      <a
+                        href={auto.postUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label="前往貼文"
+                        className="group relative block size-28 overflow-hidden rounded-xl sm:size-34"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={thumb}
+                          alt={t("Campaign post")}
+                          className="size-full object-cover transition duration-200 group-hover:blur-[3px] group-focus-visible:blur-[3px]"
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center bg-[#FF6900]/50 text-base font-bold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
+                          前往貼文
+                        </span>
+                      </a>
+                    ) : thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={thumb} alt={t("Campaign post")} className="size-28 rounded-xl object-cover sm:size-34" />
                     ) : (
                       <div className="size-28 rounded-xl bg-muted sm:size-34" />
                     )}
@@ -415,7 +422,13 @@ export default function CampaignsPage() {
                   {/* Settings summary */}
                   <div className="min-w-[14rem] flex-1">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="truncate text-xl font-bold text-foreground">{auto.name}</h3>
+                      <h3
+                        className={`truncate text-xl font-bold ${
+                          auto.isActive ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                      >
+                        {auto.name}
+                      </h3>
                       <span
                         className={`rounded-full px-3 py-1 text-sm font-medium ${
                           auto.isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
@@ -431,7 +444,7 @@ export default function CampaignsPage() {
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <PlatformTag account={auto.instagramAccount} />
+                      <PlatformTag account={auto.instagramAccount} muted={!auto.isActive} />
                       <span className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1 text-sm text-secondary-foreground">
                         留言關鍵字
                         <span className="h-3.5 w-px bg-border" />
