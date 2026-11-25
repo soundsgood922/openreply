@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AccountSelect, { PlatformTag, type AccountOption } from "@/components/account-select";
 import PageHeader from "@/components/page-header";
+import PostThumbnail from "@/components/post-thumbnail";
 import StatCard from "@/components/stat-card";
 import { Ellipsis, Plus, Search } from "lucide-react";
 import { readCache, writeCache } from "@/lib/client-cache";
@@ -373,87 +374,56 @@ export default function CampaignsPage() {
       {/* Campaign table */}
       {filtered.length > 0 && (
         <div>
-          <div className="hidden items-center rounded-xl bg-secondary px-12 py-3 text-[15px] text-secondary-foreground md:flex">
+          <div className="hidden items-center gap-6 rounded-xl bg-secondary px-12 py-3 text-[15px] text-secondary-foreground md:flex">
             <span className="flex-1">活動設定</span>
-            <span className="w-24 text-center">狀態</span>
-            <span className="w-32 text-center">操作</span>
+            <span className="w-34 text-center">指定貼文</span>
+            <span className="w-20 text-center">狀態</span>
+            <span className="w-28 text-center">操作</span>
           </div>
 
           <div className="divide-y divide-border px-0 md:px-7">
             {filtered.map((auto) => {
               const thumb = auto.postId ? thumbnails[auto.postId] : undefined;
               const twoStep = auto.openingDmEnabled || auto.analytics.claims > 0;
+              const paused = !auto.isActive;
+              // Second-row chips: one grey for both text and outline when paused.
+              const chip = paused
+                ? "border-border text-muted-foreground"
+                : "border-border text-secondary-foreground";
               return (
                 <div
                   key={auto.id}
                   onClick={() => router.push(`/campaigns/${auto.id}`)}
                   className="flex cursor-pointer flex-wrap items-center gap-x-6 gap-y-4 py-7 md:flex-nowrap"
                 >
-                  {/* Thumbnail */}
-                  <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                    {thumb && auto.postUrl ? (
-                      // Hover: the image blurs under a half-orange veil reading
-                      // 前往貼文; a click opens the post.
-                      <a
-                        href={auto.postUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label="前往貼文"
-                        className="group relative block size-28 overflow-hidden rounded-xl sm:size-34"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={thumb}
-                          alt={t("Campaign post")}
-                          className="size-full object-cover transition duration-200 group-hover:blur-[3px] group-focus-visible:blur-[3px]"
-                        />
-                        <span className="absolute inset-0 flex items-center justify-center bg-[#FF6900]/50 text-base font-bold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
-                          前往貼文
-                        </span>
-                      </a>
-                    ) : thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={thumb} alt={t("Campaign post")} className="size-28 rounded-xl object-cover sm:size-34" />
-                    ) : (
-                      <div className="size-28 rounded-xl bg-muted sm:size-34" />
-                    )}
-                  </div>
-
                   {/* Settings summary */}
-                  <div className="min-w-[14rem] flex-1">
+                  <div className="min-w-[14rem] flex-1 basis-full md:basis-auto">
                     <div className="flex flex-wrap items-center gap-3">
                       <h3
                         className={`truncate text-xl font-bold ${
-                          auto.isActive ? "text-foreground" : "text-muted-foreground"
+                          paused ? "text-muted-foreground" : "text-foreground"
                         }`}
                       >
                         {auto.name}
                       </h3>
                       <span
                         className={`rounded-full px-3 py-1 text-sm font-medium ${
-                          auto.isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                          paused ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
                         }`}
                       >
-                        {auto.isActive ? "啟用中" : "已暫停"}
+                        {paused ? "已暫停" : "啟用中"}
                       </span>
-                      {auto.pendingNextReel && (
-                        <span className="rounded-full bg-warning/10 px-3 py-1 text-sm font-medium text-warning">
-                          {t("Waiting for next reel")}
-                        </span>
-                      )}
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <PlatformTag account={auto.instagramAccount} muted={!auto.isActive} />
-                      <span className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1 text-sm text-secondary-foreground">
+                      <PlatformTag account={auto.instagramAccount} muted={paused} />
+                      <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1 text-sm ${chip}`}>
                         留言關鍵字
                         <span className="h-3.5 w-px bg-border" />
                         {auto.matchAnyWord ? "任何留言" : auto.keywords.join("、")}
                       </span>
                       {auto.requireFollow && (
-                        <span className="rounded-lg border border-border px-3 py-1 text-sm text-secondary-foreground">
-                          先追蹤再傳送
-                        </span>
+                        <span className={`rounded-lg border px-3 py-1 text-sm ${chip}`}>先追蹤再傳送</span>
                       )}
                     </div>
 
@@ -479,8 +449,22 @@ export default function CampaignsPage() {
                     </p>
                   </div>
 
-                  {/* Status */}
-                  <div className="flex w-24 shrink-0 justify-center" onClick={(e) => e.stopPropagation()}>
+                  {/* Post */}
+                  <div
+                    className={`shrink-0 md:flex md:w-34 md:justify-center ${paused ? "opacity-60" : ""}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <PostThumbnail
+                      thumb={thumb}
+                      postUrl={auto.postUrl}
+                      anyPost={auto.matchAnyPost}
+                      nextPost={auto.pendingNextReel}
+                      alt={t("Campaign post")}
+                    />
+                  </div>
+
+                  {/* Status: knob right = on, left = off */}
+                  <div className="flex shrink-0 justify-center md:w-20" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       role="switch"
@@ -493,14 +477,14 @@ export default function CampaignsPage() {
                     >
                       <span
                         className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition-all ${
-                          auto.isActive ? "left-1" : "left-8"
+                          auto.isActive ? "left-8" : "left-1"
                         }`}
                       />
                     </button>
                   </div>
 
                   {/* Actions */}
-                  <div className="relative flex w-32 shrink-0 justify-center" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative flex shrink-0 justify-center md:w-28" onClick={(e) => e.stopPropagation()}>
                     <div className="inline-flex overflow-hidden rounded-xl border border-border">
                       <Link
                         href={`/campaigns/${auto.id}/edit`}
@@ -521,17 +505,6 @@ export default function CampaignsPage() {
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
                         <div className="absolute top-full right-0 z-20 mt-1 w-28 overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-lg">
-                          {auto.postUrl && (
-                            <a
-                              href={auto.postUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              onClick={() => setMenuOpenId(null)}
-                              className="block px-4 py-2.5 text-sm text-foreground hover:bg-muted"
-                            >
-                              前往貼文
-                            </a>
-                          )}
                           <button
                             onClick={() => void duplicateAutomation(auto.id)}
                             className="block w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-muted"
