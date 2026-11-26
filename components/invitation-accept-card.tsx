@@ -1,6 +1,5 @@
 "use client";
 
-import { useI18n } from "@/lib/i18n/provider";
 import { useState } from "react";
 
 interface InvitationAcceptCardProps {
@@ -9,12 +8,14 @@ interface InvitationAcceptCardProps {
   invitedEmail: string;
 }
 
+const BUTTON =
+  "inline-flex h-12 w-full items-center justify-center rounded-xl bg-primary text-base font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50";
+
 export default function InvitationAcceptCard({
   token,
   isSignedIn,
   invitedEmail,
 }: InvitationAcceptCardProps) {
-  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -31,36 +32,34 @@ export default function InvitationAcceptCard({
       window.location.assign("/dashboard");
       return;
     }
-    setMessage(payload.error ?? t("Could not accept invitation"));
+    setMessage(payload.error ?? "無法接受邀請，請稍後再試");
     setBusy(false);
   }
 
   if (!isSignedIn) {
+    // Come back to this invite after the magic link, instead of the dashboard.
+    const loginHref = `/login?callbackUrl=${encodeURIComponent(`/invite/${token}`)}`;
     return (
-      <a
-        href="/login"
-        className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
-      >
-        {t("Sign in to accept")}
-      </a>
+      <div className="space-y-3">
+        <a href={loginHref} className={BUTTON}>
+          登入以接受邀請
+        </a>
+        <p className="text-center text-sm text-secondary-foreground">
+          請使用 {invitedEmail} 登入
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <button
-        type="button"
-        onClick={acceptInvite}
-        disabled={busy}
-        className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
-      >
-        {busy ? t("Accepting...") : t("Accept invitation")}
+      <button type="button" onClick={acceptInvite} disabled={busy} className={BUTTON}>
+        {busy ? "處理中…" : "接受邀請"}
       </button>
-      {message && <p className="text-sm text-error">{message}</p>}
-      <p className="text-xs text-muted-foreground">
-        {t("Use the magic link account for")} {invitedEmail}.
+      {message && <p className="text-center text-sm text-destructive">{message}</p>}
+      <p className="text-center text-sm text-secondary-foreground">
+        需使用 {invitedEmail} 登入的帳號才能接受
       </p>
     </div>
   );
 }
-

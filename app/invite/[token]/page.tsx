@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getI18n } from "@/lib/i18n/server";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import InvitationAcceptCard from "@/components/invitation-accept-card";
 import { auth } from "@/lib/auth";
@@ -10,16 +9,13 @@ type InvitePageProps = {
   params: Promise<{ token: string }>;
 };
 
-export async function generateMetadata(): Promise<Metadata> {
-  const { t } = await getI18n();
-  return {
-    title: t("Accept Workspace Invitation - OpenReply"),
-    robots: { index: false, follow: false },
-  };
-}
+export const metadata: Metadata = {
+  title: "後台邀請｜OpenReply",
+  robots: { index: false, follow: false },
+};
 
 export default async function InvitePage({ params }: InvitePageProps) {
-  const { t, label } = await getI18n();
+  const { label } = await getI18n();
   const { token } = await params;
   const [session, invitation] = await Promise.all([
     auth(),
@@ -38,25 +34,27 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const expired = invitation.expiresAt <= new Date();
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-5 py-12">
-        <Link href="/" className="mb-8 text-sm font-bold text-cyan-100">
-          OpenReply
-        </Link>
-        <section className="border border-white/10 bg-white/[0.035] p-8">
-          <p className="text-xs font-semibold uppercase tracking-wide text-cyan-100">
-            {t("Workspace invitation")}
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-6">
+      <div className="w-full max-w-[593px]">
+        <h1 className="mb-10 text-center text-3xl font-bold tracking-tight text-foreground">
+          後台邀請
+        </h1>
+
+        <div className="rounded-2xl bg-card px-8 py-7">
+          <p className="text-sm font-medium text-primary">你收到一份邀請</p>
+          <h2 className="mt-2 text-2xl font-bold text-foreground">
+            加入「{invitation.workspace.name}」
+          </h2>
+          <p className="mt-3 text-base leading-7 text-secondary-foreground">
+            邀請對象：<span className="font-medium text-foreground">{invitation.email}</span>
+            <br />
+            身分：<span className="font-medium text-foreground">{label(invitation.role)}</span>
           </p>
-          <h1 className="mt-4 text-3xl font-black leading-tight text-white">
-            {t("Join {workspace}", { workspace: invitation.workspace.name })}
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-zinc-400">
-            {t("You were invited as {role} for {email}.", { role: label(invitation.role), email: invitation.email })}
-          </p>
-          <div className="mt-8">
+
+          <div className="mt-10">
             {expired ? (
-              <p className="text-sm text-error">
-                {t("This invitation has expired. Ask the workspace owner to resend it.")}
+              <p className="rounded-xl bg-secondary px-4 py-3 text-sm text-destructive">
+                這份邀請已過期，請聯絡邀請你的人重新寄送。
               </p>
             ) : (
               <InvitationAcceptCard
@@ -66,9 +64,8 @@ export default async function InvitePage({ params }: InvitePageProps) {
               />
             )}
           </div>
-        </section>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
-
